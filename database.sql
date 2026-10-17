@@ -22,7 +22,9 @@ CREATE TABLE IF NOT EXISTS `master_motor` (
   `merek` VARCHAR(50) NOT NULL,
   `tipe` VARCHAR(100) NOT NULL,
   `varian` VARCHAR(100) DEFAULT NULL,
-  `aktif` TINYINT(1) NOT NULL DEFAULT 1
+  `aktif` TINYINT(1) NOT NULL DEFAULT 1,
+  `jenis_motor` VARCHAR(10) NOT NULL DEFAULT 'matic',
+  `owner_user_id` INT DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 3. Tabel master_part
@@ -103,13 +105,13 @@ INSERT INTO `users` (`id`, `nama`, `email`, `password_hash`, `role`, `created_at
 (2, 'Admin Tim Hore', 'admin@motocare.id', '$2y$10$3Y3J8s.11eOlnz5B4kXN2.8Lw8V6GqI4fV1Q3K5q6w7e8r9t0y1u2', 'admin', '2024-12-01 00:00:00'),
 (3, 'Budi Santoso (Ojol)', 'budi@motocare.id', '$2y$10$wJkXoH2v6PZJ47M5zFkJ6uJzC3vYkYf99o8WzK9e4s9L8c4zN2G1a', 'pengguna', '2025-01-10 10:00:00');
 
-INSERT INTO `master_motor` (`id`, `merek`, `tipe`, `varian`, `aktif`) VALUES
-(1, 'Honda', 'Vario 160 CBS', '2023', 1),
-(2, 'Honda', 'BeAT 110 eSP', '2023', 1),
-(3, 'Honda', 'PCX 160 ABS', '2023', 1),
-(4, 'Yamaha', 'NMAX 155 Connected', '2023', 1),
-(5, 'Yamaha', 'Aerox 155 VVA', '2023', 1),
-(6, 'Suzuki', 'Address 110 FI', '2022', 1);
+INSERT INTO `master_motor` (`id`, `merek`, `tipe`, `varian`, `aktif`, `jenis_motor`) VALUES
+(1, 'Honda', 'Vario 160 CBS', '2023', 1, 'matic'),
+(2, 'Honda', 'BeAT 110 eSP', '2023', 1, 'matic'),
+(3, 'Honda', 'PCX 160 ABS', '2023', 1, 'matic'),
+(4, 'Yamaha', 'NMAX 155 Connected', '2023', 1, 'matic'),
+(5, 'Yamaha', 'Aerox 155 VVA', '2023', 1, 'matic'),
+(6, 'Suzuki', 'Address 110 FI', '2022', 1, 'matic');
 
 INSERT INTO `master_part` (`id`, `master_motor_id`, `nama_komponen`, `interval_km`, `interval_bulan`, `kode_part_rekomendasi`, `aktif`) VALUES
 (1, 1, 'Oli Mesin (MPX2 10W-30 0.8L)', 2000, 2, '08232-2MB-K0LN', 1),

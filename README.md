@@ -59,6 +59,8 @@ Untuk kenyamanan pengujian fitur dan penilaian dewan juri, telah disediakan tomb
 
 ### Modul B — Sepeda Motor & Komponen (FR-010 – FR-015)
 - Katalog bertingkat (Merek → Tipe) dari `master_motor`.
+- Pengguna dapat mendaftarkan motor yang belum tersedia di katalog secara privat, memilih kategori Matic atau Bebek, dan mendapatkan daftar komponen awal sesuai kategorinya. Interval motor custom adalah nilai umum tanpa kode part OEM; verifikasi dengan buku manual motor.
+- Kategori motor tersimpan di `master_motor.jenis_motor`; perubahan ini dimigrasikan otomatis untuk database SQLite maupun MySQL yang sudah ada.
 - Snapshot Pattern (BR-009): Saat motor didaftarkan, standar interval km, bulan, dan kode part disalin utuh ke `user_part_status` agar perubahan data master oleh admin di kemudian hari tidak merusak riwayat motor yang telah berjalan.
 - Dukungan penyesuaian titik awal penggantian komponen kustom saat pendaftaran (FR-013).
 - Pembatasan 1 motor aktif per akun untuk Fase 1 (FR-014).

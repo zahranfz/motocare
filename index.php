@@ -130,7 +130,7 @@ require_once $partials['header'];
   <!-- ======================================================== -->
   <!-- MAIN ROUTE CONTAINER -->
   <!-- ======================================================== -->
-  <main class="flex-1 w-full flex flex-col pt-16 pb-20 md:pb-8">
+  <main class="flex-1 w-full flex flex-col pt-32 pb-20 xl:pt-16 xl:pb-8">
     <?php
     // Include all modular views
     require_once __DIR__ . '/views/dashboard.php';

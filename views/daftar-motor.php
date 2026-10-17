@@ -15,26 +15,54 @@
             </div>
             <h1 class="font-headline-md text-headline-md text-on-surface font-bold">Pendaftaran Sepeda Motor</h1>
             <p class="font-body-md text-body-md text-on-surface-variant">
-              Pilih tipe motor dari katalog master untuk memuat standar interval penggantian pabrikan secara otomatis.
+              Pilih motor dari katalog atau masukkan merek dan tipe sendiri, lalu tentukan jenis motornya.
             </p>
           </div>
 
           <form onsubmit="event.preventDefault(); App.submitRegisterMotor();" class="space-y-space-md">
             
-            <!-- Cascading Merek Motor -->
-            <div>
-              <label for="reg-brand-select" class="block font-label-md text-label-md font-semibold text-on-surface mb-1">Merek Sepeda Motor</label>
-              <select id="reg-brand-select" class="w-full bg-surface-container-low text-on-surface p-3 rounded-lg border border-[#e4beba]/60 focus:outline-none focus:ring-2 focus:ring-primary font-medium" required>
-                <option value="">Memuat katalog merek...</option>
-              </select>
+            <div id="reg-catalog-fields" class="space-y-space-md">
+              <div>
+                <label for="reg-brand-select" class="block font-label-md text-label-md font-semibold text-on-surface mb-1">Merek Sepeda Motor</label>
+                <select id="reg-brand-select" class="w-full bg-surface-container-low text-on-surface p-3 rounded-lg border border-[#e4beba]/60 focus:outline-none focus:ring-2 focus:ring-primary font-medium" required>
+                  <option value="">Memuat katalog merek...</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="reg-type-select" class="block font-label-md text-label-md font-semibold text-on-surface mb-1">Tipe &amp; Varian Motor</label>
+                <select id="reg-type-select" disabled class="w-full bg-surface-container-low text-on-surface p-3 rounded-lg border border-[#e4beba]/60 focus:outline-none focus:ring-2 focus:ring-primary font-medium disabled:opacity-50" required>
+                  <option value="">-- Pilih Merek Terlebih Dahulu --</option>
+                </select>
+              </div>
             </div>
 
-            <!-- Cascading Tipe Motor -->
-            <div>
-              <label for="reg-type-select" class="block font-label-md text-label-md font-semibold text-on-surface mb-1">Tipe &amp; Varian Motor</label>
-              <select id="reg-type-select" disabled class="w-full bg-surface-container-low text-on-surface p-3 rounded-lg border border-[#e4beba]/60 focus:outline-none focus:ring-2 focus:ring-primary font-medium disabled:opacity-50" required>
-                <option value="">-- Pilih Merek Terlebih Dahulu --</option>
-              </select>
+            <button type="button" id="reg-custom-mode-toggle" onclick="App.toggleCustomMotorForm()" class="text-primary text-sm font-semibold hover:underline">
+              Motor tidak ada di katalog? Isi data sendiri
+            </button>
+
+            <div id="reg-custom-motor-fields" class="hidden space-y-space-md bg-surface-container-low p-space-md rounded-lg border border-[#e4beba]/50">
+              <div>
+                <label for="reg-custom-brand" class="block font-label-md text-label-md font-semibold text-on-surface mb-1">Merek Motor</label>
+                <input type="text" id="reg-custom-brand" maxlength="50" placeholder="Contoh: Honda" class="w-full bg-surface-container-lowest text-on-surface p-3 rounded-lg border border-[#e4beba]/60 focus:outline-none focus:ring-2 focus:ring-primary" disabled/>
+              </div>
+              <div>
+                <label for="reg-custom-type" class="block font-label-md text-label-md font-semibold text-on-surface mb-1">Tipe Motor</label>
+                <input type="text" id="reg-custom-type" maxlength="100" placeholder="Contoh: Supra X 125" class="w-full bg-surface-container-lowest text-on-surface p-3 rounded-lg border border-[#e4beba]/60 focus:outline-none focus:ring-2 focus:ring-primary" disabled/>
+              </div>
+              <div>
+                <label for="reg-custom-variant" class="block font-label-md text-label-md font-semibold text-on-surface mb-1">Varian / Tahun (Opsional)</label>
+                <input type="text" id="reg-custom-variant" maxlength="100" placeholder="Contoh: 2022" class="w-full bg-surface-container-lowest text-on-surface p-3 rounded-lg border border-[#e4beba]/60 focus:outline-none focus:ring-2 focus:ring-primary" disabled/>
+              </div>
+              <div>
+                <label for="reg-custom-kind" class="block font-label-md text-label-md font-semibold text-on-surface mb-1">Jenis Motor</label>
+                <select id="reg-custom-kind" class="w-full bg-surface-container-lowest text-on-surface p-3 rounded-lg border border-[#e4beba]/60 focus:outline-none focus:ring-2 focus:ring-primary" disabled>
+                  <option value="">-- Pilih Jenis Motor --</option>
+                  <option value="matic">Matic</option>
+                  <option value="bebek">Bebek</option>
+                </select>
+              </div>
+              <p class="text-xs text-on-surface-variant">Daftar komponen dan interval awal akan disesuaikan dengan jenis motor. Interval bersifat umum; periksa buku manual motor Anda.</p>
             </div>
 
             <!-- Nomor Polisi -->
@@ -70,4 +98,3 @@
         </div>
       </div>
     </section>
-

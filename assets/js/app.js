@@ -183,7 +183,7 @@ const App = {
     }
 
     // Toggle header nav links
-    document.querySelectorAll('[data-nav-tab]').forEach(el => {
+    document.querySelectorAll('header nav a[data-nav-tab]').forEach(el => {
       const activeClass = "bg-primary text-white font-semibold font-label-md text-label-md rounded-lg shadow-xs";
       const inactiveClass = "text-on-surface-variant font-label-md text-label-md hover:text-on-surface hover:bg-surface-container rounded-lg";
       if (el.getAttribute('data-nav-tab') === tabId) {
@@ -306,7 +306,7 @@ const App = {
               <span class="material-symbols-outlined text-sm">two_wheeler</span>
             </div>
             <div class="overflow-hidden">
-              <div class="text-xs font-bold text-on-surface truncate">${m.merek} ${m.tipe}</div>
+              <div class="text-xs font-bold text-on-surface truncate">${this.escapeHtml(m.merek)} ${this.escapeHtml(m.tipe)}</div>
               <div class="text-[10px] font-mono text-on-surface-variant">${m.nomor_polisi || '-'} • ${Number(m.odometer_saat_ini).toLocaleString('id-ID')} km</div>
             </div>
           </div>
@@ -400,8 +400,9 @@ const App = {
             </div>
             <div class="flex flex-col">
               <div class="flex flex-wrap items-center gap-2.5 mb-1.5">
-                <h1 class="font-headline-md text-headline-md text-on-surface tracking-tight font-bold">${m.merek} ${m.tipe} ${m.varian ? `(${m.varian})` : ''}</h1>
-                <span class="bg-surface-container text-on-surface font-mono font-semibold px-2.5 py-0.5 rounded text-label-sm tracking-wider border border-surface-container-high">${m.nomor_polisi || '-'}</span>
+                <h1 class="font-headline-md text-headline-md text-on-surface tracking-tight font-bold">${this.escapeHtml(m.merek)} ${this.escapeHtml(m.tipe)} ${m.varian ? `(${this.escapeHtml(m.varian)})` : ''}</h1>
+                <span class="bg-surface-container text-on-surface font-mono font-semibold px-2.5 py-0.5 rounded text-label-sm tracking-wider border border-surface-container-high">${this.escapeHtml(m.nomor_polisi || '-')}</span>
+                <span class="bg-primary/10 text-primary px-2.5 py-0.5 rounded text-label-sm font-semibold">${m.jenis_motor === 'bebek' ? 'Bebek' : 'Matic'}</span>
                 <span class="bg-secondary-container/40 text-on-secondary-container px-2 py-0.5 rounded font-label-sm text-label-sm font-semibold flex items-center gap-1">
                   <span class="material-symbols-outlined text-sm">verified</span> Terverifikasi
                 </span>
@@ -1549,6 +1550,16 @@ const App = {
     }
   },
 
+  escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    })[char]);
+  },
+
   populateCatalogSelects() {
     const brandSelect = document.getElementById('reg-brand-select');
     const typeSelect = document.getElementById('reg-type-select');
@@ -1556,12 +1567,18 @@ const App = {
 
     // Get unique brands
     const brands = [...new Set(this.state.catalog.map(c => c.merek))];
-    brandSelect.innerHTML = '<option value="">-- Pilih Merek Motor --</option>' + brands.map(b => `<option value="${b}">${b}</option>`).join('');
+    brandSelect.innerHTML = '<option value="">-- Pilih Merek Motor --</option>' + brands.map(b => {
+      const safeBrand = this.escapeHtml(b);
+      return `<option value="${safeBrand}">${safeBrand}</option>`;
+    }).join('');
 
     brandSelect.onchange = () => {
       const selectedBrand = brandSelect.value;
       const filtered = this.state.catalog.filter(c => c.merek === selectedBrand);
-      typeSelect.innerHTML = '<option value="">-- Pilih Tipe Motor --</option>' + filtered.map(t => `<option value="${t.id}">${t.tipe} ${t.varian ? `(${t.varian})` : ''}</option>`).join('');
+      typeSelect.innerHTML = '<option value="">-- Pilih Tipe Motor --</option>' + filtered.map(t => {
+        const label = `${this.escapeHtml(t.tipe)} ${t.varian ? `(${this.escapeHtml(t.varian)})` : ''}`;
+        return `<option value="${Number(t.id)}">${label}</option>`;
+      }).join('');
       typeSelect.disabled = false;
       this.renderBaselineInputs(null);
     };
@@ -1571,6 +1588,52 @@ const App = {
       const selectedMotor = this.state.catalog.find(c => c.id === typeId);
       this.renderBaselineInputs(selectedMotor ? selectedMotor.parts : null);
     };
+  },
+
+  toggleCustomMotorForm() {
+    const catalogFields = document.getElementById('reg-catalog-fields');
+    const customFields = document.getElementById('reg-custom-motor-fields');
+    const toggleButton = document.getElementById('reg-custom-mode-toggle');
+    const catalogInputs = [
+      document.getElementById('reg-brand-select'),
+      document.getElementById('reg-type-select'),
+    ];
+    const customInputs = [
+      document.getElementById('reg-custom-brand'),
+      document.getElementById('reg-custom-type'),
+      document.getElementById('reg-custom-variant'),
+      document.getElementById('reg-custom-kind'),
+    ];
+    if (!catalogFields || !customFields) return;
+
+    const useCustomMotor = customFields.classList.contains('hidden');
+    catalogFields.classList.toggle('hidden', useCustomMotor);
+    customFields.classList.toggle('hidden', !useCustomMotor);
+    catalogInputs.forEach(input => {
+      if (!input) return;
+      input.required = !useCustomMotor;
+      input.disabled = useCustomMotor;
+    });
+    const brandSelect = document.getElementById('reg-brand-select');
+    const typeSelect = document.getElementById('reg-type-select');
+    if (typeSelect) typeSelect.disabled = useCustomMotor || !brandSelect?.value;
+    customInputs.forEach(input => {
+      if (!input) return;
+      input.required = useCustomMotor;
+      input.disabled = !useCustomMotor;
+    });
+    if (toggleButton) {
+      toggleButton.textContent = useCustomMotor
+        ? 'Pilih motor dari katalog'
+        : 'Motor tidak ada di katalog? Isi data sendiri';
+    }
+
+    const baselineContainer = document.getElementById('reg-custom-baselines-container');
+    if (useCustomMotor && baselineContainer) {
+      baselineContainer.innerHTML = '<p class="text-xs text-on-surface-variant">Komponen awal akan otomatis mengikuti jenis motor. Titik awal penggantian diatur ke odometer saat ini.</p>';
+    } else if (!useCustomMotor) {
+      this.renderBaselineInputs(null);
+    }
   },
 
   renderBaselineInputs(parts) {
@@ -1587,7 +1650,7 @@ const App = {
       <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
         ${parts.map(p => `
           <div class="bg-surface-container-low p-2 rounded text-xs grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
-            <span class="font-semibold text-on-surface">${p.nama_komponen}</span>
+            <span class="font-semibold text-on-surface">${this.escapeHtml(p.nama_komponen)}</span>
             <input type="number" data-part-id="${p.id}" class="custom-base-odo bg-surface-container-lowest p-1.5 rounded border border-[#e4beba]/60" placeholder="Odo ganti (km)">
             <input type="date" data-part-id="${p.id}" class="custom-base-date bg-surface-container-lowest p-1.5 rounded border border-[#e4beba]/60">
           </div>
@@ -1600,13 +1663,37 @@ const App = {
     const typeSelect = document.getElementById('reg-type-select');
     const plateInput = document.getElementById('reg-plate-input');
     const odoInput = document.getElementById('reg-odo-input');
+    const customFields = document.getElementById('reg-custom-motor-fields');
+    const useCustomMotor = customFields && !customFields.classList.contains('hidden');
 
-    const motorId = parseInt(typeSelect.value, 10);
     const plate = plateInput.value.trim();
     const odo = parseInt(odoInput.value, 10);
+    const payload = {
+      nomor_polisi: plate,
+      odometer: odo,
+    };
 
-    if (isNaN(motorId) || !plate || isNaN(odo) || odo < 0) {
-      this.showToast('Harap lengkapi tipe motor, nomor polisi, dan odometer saat ini', 'error');
+    if (useCustomMotor) {
+      const merek = document.getElementById('reg-custom-brand').value.trim();
+      const tipe = document.getElementById('reg-custom-type').value.trim();
+      const varian = document.getElementById('reg-custom-variant').value.trim();
+      const jenisMotor = document.getElementById('reg-custom-kind').value;
+      if (!merek || !tipe || !jenisMotor) {
+        this.showToast('Lengkapi merek, tipe, dan jenis motor', 'error');
+        return;
+      }
+      payload.custom_motor = { merek, tipe, varian, jenis_motor: jenisMotor };
+    } else {
+      const motorId = parseInt(typeSelect.value, 10);
+      if (isNaN(motorId)) {
+        this.showToast('Pilih merek dan tipe motor dari katalog', 'error');
+        return;
+      }
+      payload.master_motor_id = motorId;
+    }
+
+    if (!plate || isNaN(odo) || odo < 0) {
+      this.showToast('Harap lengkapi nomor polisi dan odometer saat ini', 'error');
       return;
     }
 
@@ -1623,12 +1710,8 @@ const App = {
       }
     });
 
-    const res = await this.api('register_motor', 'POST', {
-      master_motor_id: motorId,
-      nomor_polisi: plate,
-      odometer: odo,
-      custom_baselines: customBaselines,
-    });
+    payload.custom_baselines = customBaselines;
+    const res = await this.api('register_motor', 'POST', payload);
 
     if (res.success) {
       this.showToast(res.message, 'two_wheeler');
@@ -1663,9 +1746,10 @@ const App = {
     tbody.innerHTML = motors.map(m => `
       <tr class="border-b border-surface-container-low">
         <td class="p-space-sm font-mono text-xs">${m.id}</td>
-        <td class="p-space-sm font-bold text-xs">${m.merek}</td>
-        <td class="p-space-sm text-xs font-semibold">${m.tipe}</td>
-        <td class="p-space-sm text-xs text-on-surface-variant">${m.varian || '-'}</td>
+        <td class="p-space-sm font-bold text-xs">${this.escapeHtml(m.merek)}</td>
+        <td class="p-space-sm text-xs font-semibold">${this.escapeHtml(m.tipe)}</td>
+        <td class="p-space-sm text-xs">${m.jenis_motor === 'bebek' ? 'Bebek' : 'Matic'}</td>
+        <td class="p-space-sm text-xs text-on-surface-variant">${this.escapeHtml(m.varian || '-')}</td>
         <td class="p-space-sm font-mono text-xs">${m.used_count || 0} pengguna</td>
         <td class="p-space-sm">
           <span class="px-2 py-0.5 rounded text-[11px] font-semibold ${m.aktif ? 'bg-secondary-container/40 text-on-secondary-container' : 'bg-error-container text-on-error-container'}">
@@ -1687,14 +1771,14 @@ const App = {
     if (!tbody) return;
 
     if (selectMotor) {
-      selectMotor.innerHTML = motors.map(m => `<option value="${m.id}">${m.merek} ${m.tipe}</option>`).join('');
+      selectMotor.innerHTML = motors.map(m => `<option value="${Number(m.id)}">${this.escapeHtml(m.merek)} ${this.escapeHtml(m.tipe)}</option>`).join('');
     }
 
     tbody.innerHTML = parts.map(p => `
       <tr class="border-b border-surface-container-low">
         <td class="p-space-sm font-mono text-xs">${p.id}</td>
-        <td class="p-space-sm text-xs font-semibold">${p.merek} ${p.tipe}</td>
-        <td class="p-space-sm text-xs font-bold">${p.nama_komponen}</td>
+        <td class="p-space-sm text-xs font-semibold">${this.escapeHtml(p.merek)} ${this.escapeHtml(p.tipe)}</td>
+        <td class="p-space-sm text-xs font-bold">${this.escapeHtml(p.nama_komponen)}</td>
         <td class="p-space-sm font-mono text-xs">${p.interval_km ? Number(p.interval_km).toLocaleString('id-ID') + ' km' : '-'}</td>
         <td class="p-space-sm font-mono text-xs">${p.interval_bulan ? p.interval_bulan + ' bln' : '-'}</td>
         <td class="p-space-sm font-mono text-xs text-primary font-bold">${p.kode_part_rekomendasi || '-'}</td>
@@ -1738,12 +1822,14 @@ const App = {
     const merekEl = document.getElementById('admin-motor-merek');
     const tipeEl = document.getElementById('admin-motor-tipe');
     const varianEl = document.getElementById('admin-motor-varian');
+    const jenisEl = document.getElementById('admin-motor-jenis');
     const titleEl = document.getElementById('modal-motor-title');
 
     if (idEl) idEl.value = '0';
     if (merekEl) merekEl.value = 'Honda';
     if (tipeEl) tipeEl.value = '';
     if (varianEl) varianEl.value = '';
+    if (jenisEl) jenisEl.value = 'matic';
     if (titleEl) titleEl.textContent = 'Tambah Tipe Motor Baru';
 
     // Reset brand pills: activate Honda by default
@@ -1791,14 +1877,15 @@ const App = {
     const merek = (document.getElementById('admin-motor-merek')?.value || '').trim();
     const tipe  = (document.getElementById('admin-motor-tipe')?.value  || '').trim();
     const varian = (document.getElementById('admin-motor-varian')?.value || '').trim();
+    const jenisMotor = document.getElementById('admin-motor-jenis')?.value || '';
     const id    = parseInt(document.getElementById('admin-motor-id')?.value || '0', 10);
 
-    if (!merek || !tipe) {
-      this.showToast('Merek dan Tipe motor wajib diisi', 'error');
+    if (!merek || !tipe || !['matic', 'bebek'].includes(jenisMotor)) {
+      this.showToast('Merek, Tipe, dan Jenis motor wajib dipilih', 'error');
       return;
     }
 
-    const res = await this.api('admin_save_motor', 'POST', { id, merek, tipe, varian });
+    const res = await this.api('admin_save_motor', 'POST', { id, merek, tipe, varian, jenis_motor: jenisMotor });
     if (res.success) {
       this.closeAddMotorModal();
       this.showToast(res.message, 'check_circle');

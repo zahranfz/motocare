@@ -3,7 +3,7 @@
  * Provides offline caching, app shell pre-caching, and background resilience.
  */
 
-const CACHE_NAME = 'motocare-cache-v1';
+const CACHE_NAME = 'motocare-cache-v2';
 const PRECACHE_ASSETS = [
   './',
   './index.php',

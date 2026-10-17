@@ -28,9 +28,12 @@ function getDB() {
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             ]);
-            return $pdo;
         } catch (Exception $e) {
             // Fallback to SQLite
+        }
+        if ($pdo !== null) {
+            ensureMotorCatalogColumns($pdo);
+            return $pdo;
         }
     }
 
@@ -57,9 +60,30 @@ function getDB() {
         } catch (Exception $e) {
             // Column already exists
         }
+        ensureMotorCatalogColumns($pdo);
     }
 
     return $pdo;
+}
+
+function ensureMotorCatalogColumns($pdo) {
+    if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
+        $columns = $pdo->query("PRAGMA table_info(master_motor)")->fetchAll(PDO::FETCH_COLUMN, 1);
+    } else {
+        $columns = $pdo->query("SHOW COLUMNS FROM master_motor")->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    if (!in_array('jenis_motor', $columns, true)) {
+        $type = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite'
+            ? "TEXT NOT NULL DEFAULT 'matic'"
+            : "VARCHAR(10) NOT NULL DEFAULT 'matic'";
+        $pdo->exec("ALTER TABLE master_motor ADD COLUMN jenis_motor {$type}");
+    }
+
+    if (!in_array('owner_user_id', $columns, true)) {
+        $type = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite' ? 'INTEGER' : 'INT';
+        $pdo->exec("ALTER TABLE master_motor ADD COLUMN owner_user_id {$type} DEFAULT NULL");
+    }
 }
 
 function initSchemaAndSeed($pdo) {
@@ -79,7 +103,9 @@ function initSchemaAndSeed($pdo) {
         merek TEXT NOT NULL,
         tipe TEXT NOT NULL,
         varian TEXT,
-        aktif INTEGER NOT NULL DEFAULT 1
+        aktif INTEGER NOT NULL DEFAULT 1,
+        jenis_motor TEXT NOT NULL DEFAULT 'matic',
+        owner_user_id INTEGER DEFAULT NULL
     )");
 
     // 3. master_part
@@ -150,6 +176,7 @@ function initSchemaAndSeed($pdo) {
         FOREIGN KEY (user_motor_id) REFERENCES user_motor(id)
     )");
 
+    ensureMotorCatalogColumns($pdo);
     seedInitialData($pdo);
 }
 

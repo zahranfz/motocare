@@ -354,6 +354,14 @@
             <p class="text-[11px] text-on-surface-variant mt-1">Nama model resmi sepeda motor.</p>
           </div>
 
+          <div>
+            <label for="admin-motor-jenis" class="block text-xs font-semibold text-on-surface mb-1">Jenis Motor</label>
+            <select id="admin-motor-jenis" class="w-full bg-surface-container-low p-2.5 rounded-lg border border-[#e4beba]/60 text-xs text-on-surface focus:outline-none focus:ring-2 focus:ring-primary" required>
+              <option value="matic">Matic</option>
+              <option value="bebek">Bebek</option>
+            </select>
+          </div>
+
           <!-- Varian / Tahun -->
           <div>
             <label class="block text-xs font-semibold text-on-surface mb-1">Varian &amp; Tahun Produksi (Opsional)</label>
@@ -552,4 +560,3 @@
       </div>
     </div>
   </div>
-

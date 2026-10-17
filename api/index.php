@@ -61,12 +61,33 @@ function requireAdmin($user) {
     }
 }
 
+function defaultPartsForMotorType($jenisMotor) {
+    $sharedParts = [
+        ['Oli Mesin', 2000, 2],
+        ['Busi', 8000, 8],
+        ['Filter Udara', 12000, 12],
+        ['Kampas Rem Depan', 10000, 12],
+        ['Kampas Rem Belakang', 10000, 12],
+    ];
+
+    if ($jenisMotor === 'matic') {
+        return array_merge($sharedParts, [
+            ['Oli Gardan', 8000, 8],
+            ['V-Belt dan Roller CVT', 24000, 24],
+        ]);
+    }
+
+    return array_merge($sharedParts, [
+        ['Rantai dan Gear Set', 20000, 24],
+    ]);
+}
+
 function getActiveUserMotor($pdo, $userId, $requestedMotorId = null) {
     $targetId = (int)($requestedMotorId ?: ($_SESSION['active_motor_id'] ?? 0));
     $motor = null;
     if ($targetId > 0) {
         $stmt = $pdo->prepare("
-            SELECT um.*, mm.merek, mm.tipe, mm.varian
+            SELECT um.*, mm.merek, mm.tipe, mm.varian, mm.jenis_motor
             FROM user_motor um
             JOIN master_motor mm ON um.master_motor_id = mm.id
             WHERE um.user_id = ? AND um.id = ?
@@ -76,7 +97,7 @@ function getActiveUserMotor($pdo, $userId, $requestedMotorId = null) {
     }
     if (!$motor) {
         $stmt = $pdo->prepare("
-            SELECT um.*, mm.merek, mm.tipe, mm.varian
+            SELECT um.*, mm.merek, mm.tipe, mm.varian, mm.jenis_motor
             FROM user_motor um
             JOIN master_motor mm ON um.master_motor_id = mm.id
             WHERE um.user_id = ?
@@ -298,7 +319,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
 
         // Fetch all motors owned by user for garage switcher
         $stmtAll = $pdo->prepare("
-            SELECT um.id, um.nomor_polisi, um.odometer_saat_ini, mm.merek, mm.tipe, mm.varian
+            SELECT um.id, um.nomor_polisi, um.odometer_saat_ini, mm.merek, mm.tipe, mm.varian, mm.jenis_motor
             FROM user_motor um
             JOIN master_motor mm ON um.master_motor_id = mm.id
             WHERE um.user_id = ?
@@ -730,7 +751,14 @@ if (!defined('MOTOCARE_TEST_MODE')) {
     // CATALOG & MOTOR REGISTRATION (FR-010 - FR-014)
     // ==========================================
     case 'get_catalog':
-        $motors = $pdo->query("SELECT * FROM master_motor WHERE aktif = 1 ORDER BY merek ASC, tipe ASC")->fetchAll();
+        $user = getCurrentUser($pdo);
+        $stmtMotors = $pdo->prepare("
+            SELECT * FROM master_motor
+            WHERE aktif = 1 AND (owner_user_id IS NULL OR owner_user_id = ?)
+            ORDER BY merek ASC, tipe ASC
+        ");
+        $stmtMotors->execute([$user['id']]);
+        $motors = $stmtMotors->fetchAll();
         $parts = $pdo->query("SELECT * FROM master_part WHERE aktif = 1 ORDER BY id ASC")->fetchAll();
 
         $partsByMotor = [];
@@ -751,6 +779,11 @@ if (!defined('MOTOCARE_TEST_MODE')) {
         $nomorPolisi = strtoupper(trim($input['nomor_polisi'] ?? ''));
         $odometer = (int)($input['odometer'] ?? 0);
         $customBaselines = $input['custom_baselines'] ?? [];
+        $customMotor = $input['custom_motor'] ?? null;
+
+        if (!is_array($customBaselines)) {
+            jsonError("Data titik awal komponen tidak valid");
+        }
 
         // Multi-motor support: user can register multiple motorcycles to their garage
 
@@ -759,21 +792,94 @@ if (!defined('MOTOCARE_TEST_MODE')) {
             jsonError("Angka odometer harus di antara 0 - 999.999 km");
         }
 
-        // Fetch master motor & master parts
-        $stmtM = $pdo->prepare("SELECT * FROM master_motor WHERE id = ? AND aktif = 1");
-        $stmtM->execute([$masterMotorId]);
-        $masterMotor = $stmtM->fetch();
-        if (!$masterMotor) {
-            jsonError("Tipe motor tidak valid atau tidak aktif");
+        $isCustomMotor = is_array($customMotor);
+        if ($isCustomMotor) {
+            $merekInput = $customMotor['merek'] ?? null;
+            $tipeInput = $customMotor['tipe'] ?? null;
+            $varianInput = $customMotor['varian'] ?? '';
+            $jenisMotorInput = $customMotor['jenis_motor'] ?? null;
+            if (!is_string($merekInput) || !is_string($tipeInput) || !is_string($varianInput) || !is_string($jenisMotorInput)) {
+                jsonError("Data motor manual tidak valid");
+            }
+            $merek = trim($merekInput);
+            $tipe = trim($tipeInput);
+            $varian = trim($varianInput);
+            $jenisMotor = trim($jenisMotorInput);
+
+            if ($merek === '' || strlen($merek) > 50 || $tipe === '' || strlen($tipe) > 100 || strlen($varian) > 100) {
+                jsonError("Merek (maksimal 50 karakter) dan tipe motor (maksimal 100 karakter) wajib diisi");
+            }
+            if (!in_array($jenisMotor, ['matic', 'bebek'], true)) {
+                jsonError("Pilih jenis motor matic atau bebek");
+            }
+        } elseif ($masterMotorId <= 0) {
+            jsonError("Pilih tipe motor dari katalog atau isi data motor secara manual");
         }
 
-        $stmtP = $pdo->prepare("SELECT * FROM master_part WHERE master_motor_id = ? AND aktif = 1");
-        $stmtP->execute([$masterMotorId]);
-        $masterParts = $stmtP->fetchAll();
+        $masterMotor = null;
+        if (!$isCustomMotor) {
+            $stmtM = $pdo->prepare("
+                SELECT * FROM master_motor
+                WHERE id = ? AND aktif = 1
+                  AND (owner_user_id IS NULL OR owner_user_id = ?)
+            ");
+            $stmtM->execute([$masterMotorId, $user['id']]);
+            $masterMotor = $stmtM->fetch();
+            if (!$masterMotor) {
+                jsonError("Tipe motor tidak valid atau tidak tersedia untuk akun Anda");
+            }
+        }
 
-        // Atomically save user_motor and snapshot user_part_status
         $pdo->beginTransaction();
         try {
+            if ($isCustomMotor) {
+                $findMotor = $pdo->prepare("
+                    SELECT * FROM master_motor
+                    WHERE aktif = 1
+                      AND (owner_user_id IS NULL OR owner_user_id = ?)
+                      AND LOWER(merek) = LOWER(?)
+                      AND LOWER(tipe) = LOWER(?)
+                      AND LOWER(COALESCE(varian, '')) = LOWER(?)
+                      AND jenis_motor = ?
+                    ORDER BY CASE WHEN owner_user_id IS NULL THEN 0 ELSE 1 END
+                    LIMIT 1
+                ");
+                $findMotor->execute([$user['id'], $merek, $tipe, $varian, $jenisMotor]);
+                $masterMotor = $findMotor->fetch();
+
+                if (!$masterMotor) {
+                    $insertCustomMotor = $pdo->prepare("
+                        INSERT INTO master_motor (merek, tipe, varian, aktif, jenis_motor, owner_user_id)
+                        VALUES (?, ?, ?, 1, ?, ?)
+                    ");
+                    $insertCustomMotor->execute([$merek, $tipe, $varian !== '' ? $varian : null, $jenisMotor, $user['id']]);
+                    $masterMotorId = (int)$pdo->lastInsertId();
+
+                    $insertDefaultPart = $pdo->prepare("
+                        INSERT INTO master_part (master_motor_id, nama_komponen, interval_km, interval_bulan, kode_part_rekomendasi, aktif)
+                        VALUES (?, ?, ?, ?, NULL, 1)
+                    ");
+                    foreach (defaultPartsForMotorType($jenisMotor) as $part) {
+                        $insertDefaultPart->execute([$masterMotorId, $part[0], $part[1], $part[2]]);
+                    }
+
+                    $masterMotor = [
+                        'id' => $masterMotorId,
+                        'merek' => $merek,
+                        'tipe' => $tipe,
+                        'varian' => $varian,
+                        'jenis_motor' => $jenisMotor,
+                    ];
+                } else {
+                    $masterMotorId = (int)$masterMotor['id'];
+                }
+            }
+
+            $stmtP = $pdo->prepare("SELECT * FROM master_part WHERE master_motor_id = ? AND aktif = 1");
+            $stmtP->execute([$masterMotorId]);
+            $masterParts = $stmtP->fetchAll();
+
+            // Atomically save user_motor and snapshot user_part_status
             $now = date('Y-m-d H:i:s');
             $today = date('Y-m-d');
 
@@ -792,13 +898,14 @@ if (!defined('MOTOCARE_TEST_MODE')) {
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ");
 
-            foreach ($masterParts as $mp) {
+            foreach ($masterParts as $partIndex => $mp) {
                 $baseOdo = $odometer;
                 $baseDate = $today;
 
                 // FR-013: Custom baseline if provided
-                if (isset($customBaselines[$mp['id']])) {
-                    $custom = $customBaselines[$mp['id']];
+                $baselineKey = $isCustomMotor ? 'default_' . $partIndex : $mp['id'];
+                if (isset($customBaselines[$baselineKey])) {
+                    $custom = $customBaselines[$baselineKey];
                     if (!empty($custom['odometer']) && (int)$custom['odometer'] <= $odometer && (int)$custom['odometer'] >= 0) {
                         $baseOdo = (int)$custom['odometer'];
                     }
@@ -1155,18 +1262,19 @@ if (!defined('MOTOCARE_TEST_MODE')) {
         $merek = trim($input['merek'] ?? '');
         $tipe = trim($input['tipe'] ?? '');
         $varian = trim($input['varian'] ?? '');
+        $jenisMotor = trim($input['jenis_motor'] ?? '');
 
-        if (empty($merek) || empty($tipe)) {
-            jsonError("Merek dan Tipe motor wajib diisi");
+        if (empty($merek) || empty($tipe) || !in_array($jenisMotor, ['matic', 'bebek'], true)) {
+            jsonError("Merek, Tipe, dan Jenis motor matic atau bebek wajib diisi");
         }
 
         if ($id > 0) {
-            $stmt = $pdo->prepare("UPDATE master_motor SET merek = ?, tipe = ?, varian = ? WHERE id = ?");
-            $stmt->execute([$merek, $tipe, $varian, $id]);
+            $stmt = $pdo->prepare("UPDATE master_motor SET merek = ?, tipe = ?, varian = ?, jenis_motor = ? WHERE id = ?");
+            $stmt->execute([$merek, $tipe, $varian, $jenisMotor, $id]);
             $msg = "Data master motor berhasil diperbarui";
         } else {
-            $stmt = $pdo->prepare("INSERT INTO master_motor (merek, tipe, varian, aktif) VALUES (?, ?, ?, 1)");
-            $stmt->execute([$merek, $tipe, $varian]);
+            $stmt = $pdo->prepare("INSERT INTO master_motor (merek, tipe, varian, aktif, jenis_motor) VALUES (?, ?, ?, 1, ?)");
+            $stmt->execute([$merek, $tipe, $varian, $jenisMotor]);
             $msg = "Master motor baru berhasil ditambahkan";
         }
 
@@ -1256,4 +1364,3 @@ if (!defined('MOTOCARE_TEST_MODE')) {
         break;
     }
 }
-

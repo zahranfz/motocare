@@ -8,11 +8,11 @@
   <!-- TOP HEADER (Clean, Minimalist, Responsive) -->
   <!-- ======================================================== -->
   <header class="fixed top-0 w-full z-40 bg-surface/95 backdrop-blur-md shadow-[0_1px_4px_rgba(0,0,0,0.03)] border-b border-surface-container-high/60">
-    <div class="h-16 max-w-[1320px] mx-auto px-4 md:px-6 flex items-center justify-between gap-4">
+    <div class="min-h-16 xl:h-16 max-w-[1320px] mx-auto px-3 md:px-6 py-1 xl:py-0 flex flex-wrap xl:flex-nowrap items-center justify-between gap-x-2 gap-y-2 xl:gap-4">
       
       <!-- Brand Logo -->
-      <a href="dashboard" data-nav-tab="dashboard" class="flex items-center gap-2.5 group shrink-0">
-        <div class="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+      <a href="dashboard" data-nav-tab="dashboard" class="flex flex-col items-start gap-0 group shrink-0">
+        <div class="w-9 h-9 shrink-0 rounded-xl bg-primary text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
           <span class="material-symbols-outlined text-2xl">two_wheeler</span>
         </div>
         <div class="flex items-center gap-1.5">
@@ -22,7 +22,7 @@
       </a>
 
       <!-- Main Navigation Menu (Clean & Compact) -->
-      <nav class="hidden md:flex items-center gap-1 bg-surface-container-low p-1 rounded-xl border border-surface-container-high/60">
+      <nav class="hidden xl:flex items-center gap-1 bg-surface-container-low p-1 rounded-xl border border-surface-container-high/60">
         <a href="dashboard" data-nav-tab="dashboard" class="px-3.5 py-1.5 transition-colors bg-primary text-white font-semibold font-label-md text-label-md rounded-lg shadow-xs">
           Dashboard
         </a>
@@ -44,17 +44,17 @@
       </nav>
 
       <!-- Quick Actions: Garage Switcher, Odometer & User Profile -->
-      <div class="flex items-center gap-2 sm:gap-3">
+      <div class="order-2 flex w-full min-w-0 items-center gap-2 xl:order-none xl:w-auto xl:gap-3">
         
         <!-- Active Bike Selector / Garage Switcher Dropdown -->
-        <div class="relative" id="garage-dropdown-container">
-          <button onclick="App.toggleGarageDropdown()" id="garage-dropdown-btn" class="flex items-center gap-1.5 bg-surface-container-lowest hover:bg-surface-container text-on-surface px-2.5 sm:px-3 py-1.5 rounded-lg border border-[#e4beba]/60 shadow-xs transition-all cursor-pointer" title="Garasi Saya &amp; Pilih Motor Aktif" type="button">
+        <div class="relative order-2 min-w-0 flex-1 xl:order-none" id="garage-dropdown-container">
+          <button onclick="App.toggleGarageDropdown()" id="garage-dropdown-btn" class="flex w-full min-w-0 items-center justify-center gap-1.5 bg-surface-container-lowest hover:bg-surface-container text-on-surface px-2.5 xl:w-auto xl:px-3 py-1.5 rounded-lg border border-[#e4beba]/60 shadow-xs transition-all cursor-pointer" title="Garasi Saya &amp; Pilih Motor Aktif" type="button">
             <span class="material-symbols-outlined text-primary text-[18px]">two_wheeler</span>
-            <span class="font-label-md text-xs font-bold max-w-[100px] sm:max-w-[150px] truncate" id="header-active-bike-name">Vario 160</span>
+            <span class="font-label-md text-xs font-bold min-w-0 max-w-full xl:max-w-[150px] truncate" id="header-active-bike-name">Vario 160</span>
             <span class="material-symbols-outlined text-on-surface-variant text-[16px]">expand_more</span>
           </button>
           <!-- Garage Dropdown Menu -->
-          <div id="garage-dropdown-menu" class="hidden absolute right-0 mt-2 w-72 sm:w-80 bg-surface-container-lowest rounded-xl shadow-2xl border border-[#e4beba]/60 p-2.5 z-50">
+          <div id="garage-dropdown-menu" class="hidden absolute left-0 right-auto xl:left-auto xl:right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-72 sm:w-80 bg-surface-container-lowest rounded-xl shadow-2xl border border-[#e4beba]/60 p-2.5 z-50">
             <div class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider pb-2 mb-2 border-b border-surface-container-high flex justify-between items-center">
               <span class="flex items-center gap-1.5">
                 <span class="material-symbols-outlined text-primary text-sm">garage</span>
@@ -75,32 +75,32 @@
         </div>
 
         <!-- Live Odometer Button -->
-        <button onclick="App.openOdoModal()" class="flex items-center gap-1.5 bg-surface-container-lowest hover:bg-surface-container text-on-surface px-3 py-1.5 rounded-lg border border-surface-container-high/80 shadow-xs transition-all cursor-pointer" title="Perbarui Odometer Motor" type="button">
+        <button onclick="App.openOdoModal()" class="order-3 flex w-[104px] shrink-0 items-center justify-center gap-1.5 bg-surface-container-lowest hover:bg-surface-container text-on-surface px-2 xl:order-none xl:w-auto xl:px-3 py-1.5 rounded-lg border border-surface-container-high/80 shadow-xs transition-all cursor-pointer" title="Perbarui Odometer Motor" type="button">
           <span class="material-symbols-outlined text-primary text-[18px]">speed</span>
-          <span class="font-label-md text-xs font-mono font-bold" id="header-active-odometer">11.200 km</span>
+          <span class="font-label-md text-xs font-mono font-bold text-center leading-tight whitespace-normal" id="header-active-odometer">11.200 km</span>
         </button>
 
-        <!-- PWA Install Button (Displays when install prompt is triggered) -->
+        <!-- PWA Install Button -->
         <button id="btn-pwa-install" onclick="App.installPWA()" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20 text-xs font-bold hover:bg-primary/20 transition-all shadow-xs cursor-pointer" title="Pasang MotoCare ke Layar Utama HP / Desktop" type="button">
           <span class="material-symbols-outlined text-[18px]">install_mobile</span>
           <span class="hidden lg:inline">Install App</span>
         </button>
 
-        <!-- User Profile Avatar Pill -->
-        <div onclick="App.openUserSwitcher()" class="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full bg-surface-container-lowest hover:bg-surface-container border border-[#e4beba]/40 shadow-xs cursor-pointer transition-all" title="Ganti Akun Demo / Hak Akses">
-          <div class="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs user-avatar-letter">
-            D
-          </div>
-          <span class="font-medium text-xs text-on-surface user-display-name">Dimas P.</span>
-          <span class="material-symbols-outlined text-on-surface-variant text-[16px]">expand_more</span>
-        </div>
+      </div>
 
+      <!-- User Profile Avatar Pill -->
+      <div onclick="App.openUserSwitcher()" class="order-1 ml-auto flex items-center gap-2 pl-1 pr-1 xl:order-none xl:ml-0 xl:pr-3 py-1 rounded-full bg-surface-container-lowest hover:bg-surface-container border border-[#e4beba]/40 shadow-xs cursor-pointer transition-all" title="Ganti Akun Demo / Hak Akses" role="button" tabindex="0" aria-label="Ganti Akun Demo / Hak Akses">
+        <div class="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs user-avatar-letter">
+          D
+        </div>
+        <span class="hidden xl:inline font-medium text-xs text-on-surface user-display-name">Dimas P.</span>
+        <span class="hidden xl:inline material-symbols-outlined text-on-surface-variant text-[16px]">expand_more</span>
       </div>
     </div>
   </header>
 
   <!-- Mobile Bottom Navigation Bar -->
-  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur-md border-t border-surface-container-high shadow-lg px-2 py-2 flex justify-around items-center">
+  <nav class="xl:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur-md border-t border-surface-container-high shadow-lg px-2 py-2 flex justify-around items-center" aria-label="Navigasi utama">
     <a href="dashboard" data-nav-tab="dashboard" class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary p-1">
       <span class="material-symbols-outlined text-2xl">speed</span>
       <span class="text-[10px] font-bold">Dashboard</span>

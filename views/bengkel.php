@@ -89,23 +89,23 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
           
           <!-- Workshop Listing Column (5 cols on lg) -->
-          <div class="lg:col-span-5 flex flex-col gap-space-sm order-2 lg:order-1">
+          <div class="lg:col-span-5 flex flex-col gap-space-sm order-1 lg:order-1">
             <div class="flex items-center justify-between px-space-xs mb-space-xs">
               <span class="font-label-md text-label-md font-bold uppercase tracking-wider text-on-surface-variant">Daftar Terdekat (Urut Jarak)</span>
               <span id="workshop-result-count" class="font-label-sm text-label-sm text-on-surface-variant">Menampilkan bengkel terdekat...</span>
             </div>
             
-            <div id="workshop-list-container" class="flex flex-col gap-space-sm max-h-[640px] overflow-y-auto pr-1">
+            <div id="workshop-list-container" class="flex flex-col gap-space-sm max-h-[420px] lg:max-h-[640px] overflow-y-auto overscroll-contain pr-1">
               <!-- Dynamically populated from App.renderWorkshopList() -->
             </div>
           </div>
 
           <!-- Interactive Leaflet Map Column (7 cols on lg) -->
-          <div class="lg:col-span-7 order-1 lg:order-2 sticky top-24">
+          <div class="lg:col-span-7 order-2 lg:order-2 lg:sticky lg:top-24">
             <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-[#e4beba]/40 overflow-hidden relative">
-              <div id="leaflet-map" class="w-full h-[580px] z-10"></div>
+              <div id="leaflet-map" class="w-full h-[320px] sm:h-[380px] lg:h-[580px] z-10"></div>
               <!-- Floating Legend -->
-              <div class="absolute bottom-4 left-4 z-20 bg-surface-container-lowest/90 backdrop-blur-md px-3 py-2 rounded-lg shadow-md border border-[#e4beba]/60 flex items-center gap-4 text-xs">
+              <div class="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 z-20 bg-surface-container-lowest/90 backdrop-blur-md px-2 sm:px-3 py-2 rounded-lg shadow-md border border-[#e4beba]/60 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] sm:text-xs">
                 <div class="flex items-center gap-1.5">
                   <span class="w-3 h-3 rounded-full bg-primary inline-block"></span>
                   <span class="font-semibold text-primary">Bengkel Resmi</span>

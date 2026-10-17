@@ -39,6 +39,7 @@
                   <th class="p-space-sm">ID</th>
                   <th class="p-space-sm">Merek</th>
                   <th class="p-space-sm">Tipe</th>
+                  <th class="p-space-sm">Jenis</th>
                   <th class="p-space-sm">Varian</th>
                   <th class="p-space-sm">Terdaftar</th>
                   <th class="p-space-sm">Status</th>
@@ -81,4 +82,3 @@
 
       </div>
     </section>
-
