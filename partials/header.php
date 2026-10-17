@@ -11,7 +11,7 @@
     <div class="h-16 max-w-[1320px] mx-auto px-4 md:px-6 flex items-center justify-between gap-4">
       
       <!-- Brand Logo -->
-      <a href="#dashboard" class="flex items-center gap-2.5 group shrink-0">
+      <a href="dashboard" data-nav-tab="dashboard" class="flex items-center gap-2.5 group shrink-0">
         <div class="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
           <span class="material-symbols-outlined text-2xl">two_wheeler</span>
         </div>
@@ -23,22 +23,22 @@
 
       <!-- Main Navigation Menu (Clean & Compact) -->
       <nav class="hidden md:flex items-center gap-1 bg-surface-container-low p-1 rounded-xl border border-surface-container-high/60">
-        <a href="#dashboard" data-nav-tab="dashboard" class="px-3.5 py-1.5 transition-colors bg-primary text-white font-semibold font-label-md text-label-md rounded-lg shadow-xs">
+        <a href="dashboard" data-nav-tab="dashboard" class="px-3.5 py-1.5 transition-colors bg-primary text-white font-semibold font-label-md text-label-md rounded-lg shadow-xs">
           Dashboard
         </a>
-        <a href="#peta-bengkel" data-nav-tab="peta-bengkel" class="px-3.5 py-1.5 transition-colors text-on-surface-variant font-label-md text-label-md hover:text-on-surface hover:bg-surface-container rounded-lg">
+        <a href="bengkel" data-nav-tab="peta-bengkel" class="px-3.5 py-1.5 transition-colors text-on-surface-variant font-label-md text-label-md hover:text-on-surface hover:bg-surface-container rounded-lg">
           Bengkel
         </a>
-        <a href="#riwayat-servis" data-nav-tab="riwayat-servis" class="px-3.5 py-1.5 transition-colors text-on-surface-variant font-label-md text-label-md hover:text-on-surface hover:bg-surface-container rounded-lg">
+        <a href="riwayat" data-nav-tab="riwayat-servis" class="px-3.5 py-1.5 transition-colors text-on-surface-variant font-label-md text-label-md hover:text-on-surface hover:bg-surface-container rounded-lg">
           Riwayat
         </a>
-        <a href="#buku-servis" data-nav-tab="buku-servis" class="px-3.5 py-1.5 transition-colors text-on-surface-variant font-label-md text-label-md hover:text-on-surface hover:bg-surface-container rounded-lg">
+        <a href="buku-servis" data-nav-tab="buku-servis" class="px-3.5 py-1.5 transition-colors text-on-surface-variant font-label-md text-label-md hover:text-on-surface hover:bg-surface-container rounded-lg">
           Buku Servis
         </a>
-        <a href="#daftar-motor" data-nav-tab="daftar-motor" class="px-3.5 py-1.5 transition-colors text-on-surface-variant font-label-md text-label-md hover:text-on-surface hover:bg-surface-container rounded-lg">
+        <a href="daftar-motor" data-nav-tab="daftar-motor" class="px-3.5 py-1.5 transition-colors text-on-surface-variant font-label-md text-label-md hover:text-on-surface hover:bg-surface-container rounded-lg">
           Motor Saya
         </a>
-        <a href="#admin" id="nav-item-admin" data-nav-tab="admin" class="hidden px-3.5 py-1.5 transition-colors text-on-surface-variant font-label-md text-label-md hover:text-on-surface hover:bg-surface-container rounded-lg">
+        <a href="admin" id="nav-item-admin" data-nav-tab="admin" class="hidden px-3.5 py-1.5 transition-colors text-on-surface-variant font-label-md text-label-md hover:text-on-surface hover:bg-surface-container rounded-lg">
           Admin
         </a>
       </nav>
@@ -101,23 +101,23 @@
 
   <!-- Mobile Bottom Navigation Bar -->
   <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur-md border-t border-surface-container-high shadow-lg px-2 py-2 flex justify-around items-center">
-    <a href="#dashboard" class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary p-1">
+    <a href="dashboard" data-nav-tab="dashboard" class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary p-1">
       <span class="material-symbols-outlined text-2xl">speed</span>
       <span class="text-[10px] font-bold">Dashboard</span>
     </a>
-    <a href="#peta-bengkel" class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary p-1">
+    <a href="bengkel" data-nav-tab="peta-bengkel" class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary p-1">
       <span class="material-symbols-outlined text-2xl">near_me</span>
       <span class="text-[10px] font-bold">Bengkel</span>
     </a>
-    <a href="#riwayat-servis" class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary p-1">
+    <a href="riwayat" data-nav-tab="riwayat-servis" class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary p-1">
       <span class="material-symbols-outlined text-2xl">history</span>
       <span class="text-[10px] font-bold">Riwayat</span>
     </a>
-    <a href="#buku-servis" class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary p-1">
+    <a href="buku-servis" data-nav-tab="buku-servis" class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary p-1">
       <span class="material-symbols-outlined text-2xl">picture_as_pdf</span>
       <span class="text-[10px] font-bold">Buku PDF</span>
     </a>
-    <a href="#daftar-motor" class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary p-1">
+    <a href="daftar-motor" data-nav-tab="daftar-motor" class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary p-1">
       <span class="material-symbols-outlined text-2xl">two_wheeler</span>
       <span class="text-[10px] font-bold">Motor</span>
     </a>

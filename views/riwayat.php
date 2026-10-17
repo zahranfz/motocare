@@ -23,7 +23,7 @@
             </p>
           </div>
           <div class="flex items-center flex-wrap gap-space-sm">
-            <a href="#buku-servis" class="flex items-center gap-space-xs px-space-md py-space-sm bg-surface-container-lowest text-on-surface hover:bg-surface-container-high transition-all rounded-lg shadow-sm font-label-lg text-label-lg border border-[#e4beba]/40">
+            <a href="buku-servis" data-nav-tab="buku-servis" class="flex items-center gap-space-xs px-space-md py-space-sm bg-surface-container-lowest text-on-surface hover:bg-surface-container-high transition-all rounded-lg shadow-sm font-label-lg text-label-lg border border-[#e4beba]/40">
               <span class="material-symbols-outlined text-primary text-title-lg">picture_as_pdf</span>
               <span>Buku Servis PDF</span>
             </a>

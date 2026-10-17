@@ -7,7 +7,8 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="MotoCare Digital - Motorcycle Maintenance Tracker & Smart Assistant. Pelacak servis motor berkala, rekomendasi suku cadang, pencari bengkel resmi dan umum, serta buku servis digital PDF."/>
-  <title>MotoCare Digital — Smart Maintenance Tracker & Telemetry</title>
+  <title><?= isset($pageTitle) && !empty($pageTitle) ? htmlspecialchars($pageTitle) : 'MotoCare Digital — Smart Maintenance Tracker & Telemetry' ?></title>
+  <base href="<?= htmlspecialchars($baseUri ?? './') ?>"/>
 
   <!-- PWA Manifest & Mobile Web App Meta -->
   <link rel="manifest" href="manifest.json"/>

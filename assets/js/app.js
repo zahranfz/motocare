@@ -33,8 +33,12 @@ const App = {
 
   init() {
     this.bindEvents();
-    this.handleRoute();
-    window.addEventListener('hashchange', () => this.handleRoute());
+    this.handleRoute(false);
+    window.addEventListener('popstate', (e) => {
+      const tab = e.state && e.state.tab ? e.state.tab : this.parseCurrentRoute();
+      this.switchTab(tab, false);
+    });
+    window.addEventListener('hashchange', () => this.handleRoute(true));
     window.addEventListener('click', (e) => {
       const garageContainer = document.getElementById('garage-dropdown-container');
       const garageMenu = document.getElementById('garage-dropdown-menu');
@@ -103,19 +107,71 @@ const App = {
   },
 
   // ====================================================
-  // ROUTING & NAVIGATION
+  // ROUTING & NAVIGATION (Clean HTML5 History API)
   // ====================================================
-  handleRoute() {
-    let hash = window.location.hash.replace('#', '') || 'dashboard';
-    if (!['dashboard', 'peta-bengkel', 'riwayat-servis', 'buku-servis', 'daftar-motor', 'admin'].includes(hash)) {
-      hash = 'dashboard';
+  parseCurrentRoute() {
+    if (window.initialRoute) {
+      const init = window.initialRoute;
+      window.initialRoute = null;
+      return this.normalizeRoute(init);
     }
-    this.switchTab(hash);
+    const urlParams = new URLSearchParams(window.location.search);
+    let p = urlParams.get('page') || urlParams.get('route') || urlParams.get('view');
+    if (p) return this.normalizeRoute(p);
+
+    // Extract path: e.g. /motocare/bengkel -> bengkel
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const lastPart = pathParts[pathParts.length - 1];
+    if (lastPart && lastPart !== 'index.php') {
+      return this.normalizeRoute(lastPart);
+    }
+
+    if (window.location.hash) {
+      return this.normalizeRoute(window.location.hash.replace('#', ''));
+    }
+
+    return 'dashboard';
   },
 
-  switchTab(tabId) {
+  normalizeRoute(slug) {
+    if (!slug) return 'dashboard';
+    slug = String(slug).toLowerCase().trim().replace(/[^a-z0-9_-]/g, '');
+    if (slug === 'bengkel') return 'peta-bengkel';
+    if (slug === 'riwayat') return 'riwayat-servis';
+    if (slug === 'pdf') return 'buku-servis';
+    if (slug === 'motor') return 'daftar-motor';
+    if (['dashboard', 'peta-bengkel', 'riwayat-servis', 'buku-servis', 'daftar-motor', 'admin'].includes(slug)) {
+      return slug;
+    }
+    return 'dashboard';
+  },
+
+  getSlugForTab(tabId) {
+    if (tabId === 'peta-bengkel') return 'bengkel';
+    if (tabId === 'riwayat-servis') return 'riwayat';
+    return tabId;
+  },
+
+  handleRoute(push = false) {
+    const tabId = this.parseCurrentRoute();
+    this.switchTab(tabId, push);
+  },
+
+  switchTab(tabId, updateHistory = true) {
     this.state.currentTab = tabId;
-    window.location.hash = '#' + tabId;
+    const slug = this.getSlugForTab(tabId);
+
+    // Clean URL without hash
+    if (updateHistory) {
+      if (!window.location.pathname.endsWith('/' + slug) && !window.location.pathname.endsWith('/' + tabId)) {
+        window.history.pushState({ tab: tabId }, '', slug);
+      }
+    } else {
+      // Replace state to ensure no leftover index.php or #hash in URL bar
+      if (window.location.hash || window.location.pathname.includes('index.php') || window.location.search) {
+        window.history.replaceState({ tab: tabId }, '', slug);
+      }
+    }
 
     // Toggle tab panels
     document.querySelectorAll('.tab-content').forEach(el => {
@@ -758,6 +814,27 @@ const App = {
   // ====================================================
   // WORKSHOP FINDER (LEAFLET + OVERPASS API)
   // ====================================================
+  async reverseGeocode(lat, lng) {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1`, {
+        headers: { 'Accept-Language': 'id' }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const addr = data.address || {};
+        const road = addr.road || addr.street || addr.pedestrian || '';
+        const district = addr.suburb || addr.village || addr.neighbourhood || addr.city_district || addr.hamlet || addr.county || '';
+        const city = addr.city || addr.regency || addr.town || addr.municipality || '';
+        const state = addr.state || '';
+        const displayName = [district, city].filter(Boolean).join(', ') || [road, city].filter(Boolean).join(', ') || data.name || 'Lokasi Terpilih';
+        return { road, district, city, state, displayName };
+      }
+    } catch (err) {
+      console.warn('Reverse geocode error:', err);
+    }
+    return null;
+  },
+
   async initOrUpdateMap() {
     const mapEl = document.getElementById('leaflet-map');
     if (!mapEl) return;
@@ -778,17 +855,47 @@ const App = {
       this.state.leafletMap.on('click', (e) => {
         this.setManualLocation(e.latlng.lat, e.latlng.lng);
       });
+
+      // Try automatic GPS detection on initial open
+      if (navigator.geolocation && !this.state.gpsInitialized) {
+        this.state.gpsInitialized = true;
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            this.setManualLocation(pos.coords.latitude, pos.coords.longitude, 'Lokasi GPS Anda');
+          },
+          (err) => {
+            console.log('GPS initial auto-detect skipped:', err.message);
+          },
+          { timeout: 4000, enableHighAccuracy: false }
+        );
+      }
     }
 
     await this.fetchWorkshops();
   },
 
-  async fetchWorkshops() {
+  async fetchWorkshops(areaInfo = null) {
     const { lat, lng } = this.state.workshopLocation;
     const radius = this.state.workshopRadius;
     const filter = this.state.workshopFilter;
 
-    const res = await this.api(`get_workshops&lat=${lat}&lng=${lng}&radius=${radius}&filter=${filter}`);
+    if (!areaInfo) {
+      areaInfo = await this.reverseGeocode(lat, lng);
+    }
+
+    if (areaInfo && areaInfo.displayName) {
+      const labelEl = document.getElementById('gps-acuan-label');
+      if (labelEl) labelEl.textContent = areaInfo.displayName;
+    }
+
+    let queryParams = `get_workshops&lat=${lat}&lng=${lng}&radius=${radius}&filter=${filter}`;
+    if (areaInfo) {
+      if (areaInfo.district) queryParams += `&area=${encodeURIComponent(areaInfo.district)}`;
+      if (areaInfo.city) queryParams += `&city=${encodeURIComponent(areaInfo.city)}`;
+      if (areaInfo.road) queryParams += `&road=${encodeURIComponent(areaInfo.road)}`;
+    }
+
+    const res = await this.api(queryParams);
     if (res.success) {
       this.state.workshops = res.workshops || [];
       this.renderWorkshopList(res.workshops);
@@ -1033,23 +1140,31 @@ const App = {
 
     this.showToast('Meminta koordinat GPS...', 'my_location');
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        this.setManualLocation(pos.coords.latitude, pos.coords.longitude, 'Lokasi GPS Anda');
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
         this.showToast('Lokasi GPS berhasil didapatkan!', 'check_circle');
+        await this.setManualLocation(lat, lng, 'Lokasi GPS Anda');
       },
       (err) => {
         console.warn('Geolocation denied/error:', err);
-        this.showToast('Izin lokasi ditolak. Menggunakan lokasi acuan Margonda Depok. Anda dapat klik peta untuk memilih lokasi manual.', 'info');
+        this.showToast('Izin lokasi ditolak. Anda dapat klik peta untuk memilih lokasi manual.', 'info');
       },
       { timeout: 10000, enableHighAccuracy: true }
     );
   },
 
-  setManualLocation(lat, lng, label = 'Titik Pilihan Manual') {
+  async setManualLocation(lat, lng, label = 'Titik Pilihan Manual') {
     this.state.workshopLocation = { lat, lng };
     const labelEl = document.getElementById('gps-acuan-label');
-    if (labelEl) labelEl.textContent = label;
-    this.fetchWorkshops();
+    if (labelEl) labelEl.textContent = 'Memuat lokasi...';
+
+    const areaInfo = await this.reverseGeocode(lat, lng);
+    if (labelEl) {
+      labelEl.textContent = areaInfo ? areaInfo.displayName : label;
+    }
+
+    await this.fetchWorkshops(areaInfo);
   },
 
   setWorkshopFilter(filterType) {
@@ -1613,22 +1728,84 @@ const App = {
     }
   },
 
-  // Add new master motor modal
-  openAddMotorModal() {
-    const m = prompt('Masukkan Merek (contoh: Honda):');
-    if (!m) return;
-    const t = prompt('Masukkan Tipe (contoh: Stylo 160):');
-    if (!t) return;
-    const v = prompt('Masukkan Varian/Tahun (contoh: 2024):');
 
-    this.api('admin_save_motor', 'POST', { merek: m, tipe: t, varian: v }).then(res => {
-      if (res.success) {
-        this.showToast(res.message, 'check_circle');
-        this.loadAdminData();
-      } else {
-        this.showToast(res.error, 'error');
-      }
+  // ====================================================
+  // ADD MASTER MOTOR MODAL (ADMIN, FR-060)
+  // ====================================================
+  openAddMotorModal() {
+    // Reset form fields
+    const idEl = document.getElementById('admin-motor-id');
+    const merekEl = document.getElementById('admin-motor-merek');
+    const tipeEl = document.getElementById('admin-motor-tipe');
+    const varianEl = document.getElementById('admin-motor-varian');
+    const titleEl = document.getElementById('modal-motor-title');
+
+    if (idEl) idEl.value = '0';
+    if (merekEl) merekEl.value = 'Honda';
+    if (tipeEl) tipeEl.value = '';
+    if (varianEl) varianEl.value = '';
+    if (titleEl) titleEl.textContent = 'Tambah Tipe Motor Baru';
+
+    // Reset brand pills: activate Honda by default
+    this.setMotorBrandPreset('Honda');
+
+    // Open modal
+    const modal = document.getElementById('modal-add-master-motor');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      // Focus first empty required field
+      setTimeout(() => {
+        const tipeInput = document.getElementById('admin-motor-tipe');
+        if (tipeInput) tipeInput.focus();
+      }, 150);
+    }
+  },
+
+  closeAddMotorModal() {
+    const modal = document.getElementById('modal-add-master-motor');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+  },
+
+  setMotorBrandPreset(brand) {
+    // Fill text input
+    const merekEl = document.getElementById('admin-motor-merek');
+    if (merekEl) merekEl.value = brand;
+
+    // Update pill active state
+    document.querySelectorAll('.brand-pill').forEach(pill => {
+      const isActive = pill.dataset.brand === brand;
+      pill.className = [
+        'brand-pill px-2 py-1.5 rounded-lg border text-xs font-semibold text-center transition-all',
+        isActive
+          ? 'bg-primary/10 border-primary text-primary'
+          : 'bg-surface-container-low border-surface-container-high text-on-surface hover:bg-surface-container'
+      ].join(' ');
     });
+  },
+
+  async submitAddMasterMotor() {
+    const merek = (document.getElementById('admin-motor-merek')?.value || '').trim();
+    const tipe  = (document.getElementById('admin-motor-tipe')?.value  || '').trim();
+    const varian = (document.getElementById('admin-motor-varian')?.value || '').trim();
+    const id    = parseInt(document.getElementById('admin-motor-id')?.value || '0', 10);
+
+    if (!merek || !tipe) {
+      this.showToast('Merek dan Tipe motor wajib diisi', 'error');
+      return;
+    }
+
+    const res = await this.api('admin_save_motor', 'POST', { id, merek, tipe, varian });
+    if (res.success) {
+      this.closeAddMotorModal();
+      this.showToast(res.message, 'check_circle');
+      this.loadAdminData();
+    } else {
+      this.showToast(res.error || 'Gagal menyimpan data motor', 'error');
+    }
   },
 
   // Add new master part modal
@@ -1803,6 +1980,16 @@ const App = {
   },
 
   bindEvents() {
+    // Intercept clicks on links with data-nav-tab for clean routing without full page reload
+    document.addEventListener('click', (e) => {
+      const navLink = e.target.closest('a[data-nav-tab]');
+      if (navLink) {
+        e.preventDefault();
+        const tab = navLink.getAttribute('data-nav-tab');
+        this.switchTab(tab, true);
+      }
+    });
+
     // Escape key closes modals
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
@@ -1810,6 +1997,7 @@ const App = {
         this.closeOdoModal();
         this.closeManualServiceModal();
         this.closeAddPartModal();
+        this.closeAddMotorModal();
         this.closeUserSwitcher();
       }
     });

@@ -127,7 +127,7 @@
               </p>
             </div>
             <div class="flex items-center gap-space-sm flex-wrap">
-              <a href="#buku-servis" class="flex items-center gap-space-xs bg-surface-container-lowest hover:bg-surface-container-high text-on-surface px-space-md py-2 rounded-lg shadow-sm font-label-md text-label-md transition-all border border-[#e4beba]/40">
+              <a href="buku-servis" data-nav-tab="buku-servis" class="flex items-center gap-space-xs bg-surface-container-lowest hover:bg-surface-container-high text-on-surface px-space-md py-2 rounded-lg shadow-sm font-label-md text-label-md transition-all border border-[#e4beba]/40">
                 <span class="material-symbols-outlined text-primary text-base">picture_as_pdf</span>
                 <span>Ekspor Buku Servis PDF</span>
               </a>

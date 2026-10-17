@@ -1,8 +1,8 @@
-# MotoCare Digital - Apache Configuration
+# MotoCare Digital - Apache Configuration & Backend Routing
 
 DirectoryIndex index.php
 
-# Protect SQLite database from direct browser downloads
+# Protect SQLite database and SQL files from direct browser downloads
 <Files ~ "\.(db|sqlite|sql)$">
     Order allow,deny
     Deny from all
@@ -10,3 +10,18 @@ DirectoryIndex index.php
 
 # Character encoding & MIME types
 AddDefaultCharset UTF-8
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Exclude real files, assets, uploads, and directories
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Route /api/* endpoints to api/index.php
+    RewriteRule ^api/(.*)$ api/index.php?action=$1 [QSA,L]
+
+    # Route clean view URLs to index.php?page=$1
+    RewriteRule ^(dashboard|bengkel|peta-bengkel|riwayat|riwayat-servis|buku-servis|daftar-motor|motor|admin)/?$ index.php?page=$1 [QSA,L]
+</IfModule>
