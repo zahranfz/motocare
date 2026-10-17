@@ -1,0 +1,1377 @@
+/**
+ * MotoCare Digital - Application Core JavaScript
+ * Implements all PRD Requirements, Calculations (BR-001 - BR-007),
+ * Leaflet Workshop Map, html2pdf.js Export, and Reactive State.
+ */
+
+const App = {
+  state: {
+    user: null,
+    motor: null,
+    components: [],
+    summary: { merah: 0, kuning: 0, hijau: 0, total: 0 },
+    historyRecords: [],
+    historyMetrics: {},
+    catalog: [],
+    workshops: [],
+    workshopLocation: { lat: -6.3728, lng: 106.8335 }, // Margonda Depok default
+    workshopRadius: 5,
+    workshopFilter: 'all',
+    currentTab: 'dashboard',
+    activeResetPart: null,
+    leafletMap: null,
+    mapMarkers: [],
+    userMarker: null,
+    zoomLevel: 100,
+  },
+
+  init() {
+    this.bindEvents();
+    this.handleRoute();
+    window.addEventListener('hashchange', () => this.handleRoute());
+    this.loadCurrentUser().then(() => {
+      this.refreshData();
+    });
+  },
+
+  // ====================================================
+  // API HELPER
+  // ====================================================
+  async api(endpoint, method = 'GET', data = null) {
+    const options = {
+      method,
+      headers: {
+        'Accept': 'application/json',
+      },
+    };
+
+    if (data && method === 'POST') {
+      options.headers['Content-Type'] = 'application/json';
+      options.body = JSON.stringify(data);
+    }
+
+    try {
+      const res = await fetch(`api/index.php?action=${endpoint}`, options);
+      const json = await res.json();
+      return json;
+    } catch (err) {
+      console.error('API Error:', err);
+      this.showToast('Gagal terhubung ke server', 'error');
+      return { success: false, error: err.message };
+    }
+  },
+
+  // ====================================================
+  // ROUTING & NAVIGATION
+  // ====================================================
+  handleRoute() {
+    let hash = window.location.hash.replace('#', '') || 'dashboard';
+    if (!['dashboard', 'peta-bengkel', 'riwayat-servis', 'buku-servis', 'daftar-motor', 'admin'].includes(hash)) {
+      hash = 'dashboard';
+    }
+    this.switchTab(hash);
+  },
+
+  switchTab(tabId) {
+    this.state.currentTab = tabId;
+    window.location.hash = '#' + tabId;
+
+    // Toggle tab panels
+    document.querySelectorAll('.tab-content').forEach(el => {
+      el.classList.remove('active');
+    });
+    const target = document.getElementById(`view-${tabId}`);
+    if (target) {
+      target.classList.add('active');
+    }
+
+    // Toggle header nav links
+    document.querySelectorAll('[data-nav-tab]').forEach(el => {
+      const activeClass = "bg-primary-container text-on-primary-container font-label-lg rounded-lg";
+      const inactiveClass = "text-on-surface-variant font-label-lg hover:text-on-surface";
+      if (el.getAttribute('data-nav-tab') === tabId) {
+        el.className = `px-space-md py-space-sm transition-colors ${activeClass}`;
+      } else {
+        el.className = `px-space-md py-space-sm transition-colors ${inactiveClass}`;
+      }
+    });
+
+    // Lazy load specific view content
+    if (tabId === 'peta-bengkel') {
+      setTimeout(() => this.initOrUpdateMap(), 100);
+    } else if (tabId === 'riwayat-servis') {
+      this.loadHistory();
+    } else if (tabId === 'buku-servis') {
+      this.renderPdfSheet();
+    } else if (tabId === 'daftar-motor') {
+      this.loadCatalog();
+    } else if (tabId === 'admin') {
+      this.loadAdminData();
+    }
+  },
+
+  // ====================================================
+  // DATA LOADING
+  // ====================================================
+  async loadCurrentUser() {
+    const res = await this.api('get_current_user');
+    if (res.success && res.user) {
+      this.state.user = res.user;
+      this.updateUserUI();
+    }
+  },
+
+  updateUserUI() {
+    const u = this.state.user;
+    if (!u) return;
+
+    const nameEls = document.querySelectorAll('.user-display-name');
+    nameEls.forEach(el => el.textContent = u.nama);
+
+    const roleBadgeEls = document.querySelectorAll('.user-role-badge');
+    roleBadgeEls.forEach(el => {
+      if (u.role === 'admin') {
+        el.textContent = 'Administrator';
+        el.className = 'font-label-sm text-label-sm text-primary bg-primary-fixed px-space-xs rounded font-semibold user-role-badge';
+      } else {
+        el.textContent = 'Commuter Pro';
+        el.className = 'font-label-sm text-label-sm text-secondary bg-secondary-container/30 px-space-xs rounded font-semibold user-role-badge';
+      }
+    });
+
+    // Toggle Admin Navigation Tab
+    const adminNav = document.getElementById('nav-item-admin');
+    if (adminNav) {
+      if (u.role === 'admin') {
+        adminNav.classList.remove('hidden');
+      } else {
+        adminNav.classList.add('hidden');
+      }
+    }
+  },
+
+  async refreshData() {
+    const res = await this.api('get_dashboard');
+    if (res.success) {
+      this.state.motor = res.motor;
+      this.state.components = res.components || [];
+      this.state.summary = res.summary || { merah: 0, kuning: 0, hijau: 0, total: 0 };
+
+      if (!res.has_motor) {
+        this.renderEmptyBikeState();
+      } else {
+        this.renderDashboard();
+      }
+    }
+  },
+
+  // ====================================================
+  // DASHBOARD RENDERING
+  // ====================================================
+  renderEmptyBikeState() {
+    const banner = document.getElementById('dashboard-hero-banner');
+    if (banner) {
+      banner.innerHTML = `
+        <div class="bg-surface-container-lowest rounded-xl p-space-xl shadow-sm text-center flex flex-col items-center justify-center gap-space-md">
+          <div class="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+            <span class="material-symbols-outlined text-4xl">two_wheeler</span>
+          </div>
+          <h2 class="font-headline-md text-headline-md text-on-surface">Belum Ada Sepeda Motor Terdaftar</h2>
+          <p class="font-body-md text-body-md text-on-surface-variant max-w-md">
+            Daftarkan sepeda motor Anda sekarang untuk mulai memantau masa pakai komponen dan jadwal perawatan berkala.
+          </p>
+          <button onclick="App.switchTab('daftar-motor')" class="bg-primary hover:bg-primary-container text-on-primary px-space-lg py-3 rounded-lg shadow-sm font-label-lg font-semibold flex items-center gap-2">
+            <span class="material-symbols-outlined">add_circle</span>
+            <span>Daftarkan Motor Pertama</span>
+          </button>
+        </div>
+      `;
+    }
+    const grid = document.getElementById('components-grid');
+    if (grid) grid.innerHTML = '';
+  },
+
+  renderDashboard() {
+    const m = this.state.motor;
+    const comps = this.state.components;
+    const sum = this.state.summary;
+
+    // 1. Update Header Bike Pill
+    const headerBike = document.getElementById('header-active-bike');
+    if (headerBike && m) {
+      headerBike.innerHTML = `
+        <span class="material-symbols-outlined text-primary text-title-lg">two_wheeler</span>
+        <div class="flex flex-col text-left">
+          <span class="font-title-md text-title-md leading-tight text-on-surface">${m.merek} ${m.tipe}</span>
+          <span class="font-label-sm text-label-sm text-on-surface-variant font-mono">${m.nomor_polisi || '-'}</span>
+        </div>
+      `;
+    }
+
+    // 2. Update Header Odometer Pill
+    const headerOdo = document.getElementById('header-active-odometer');
+    if (headerOdo && m) {
+      headerOdo.textContent = `${Number(m.odometer_saat_ini).toLocaleString('id-ID')} km`;
+    }
+
+    // 3. Render Hero Banner
+    const banner = document.getElementById('dashboard-hero-banner');
+    if (banner && m) {
+      banner.innerHTML = `
+        <div class="bg-surface-container-lowest rounded-xl p-space-lg lg:p-space-xl shadow-sm relative overflow-hidden flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-space-lg">
+          <div class="absolute -right-12 -top-12 opacity-5 pointer-events-none select-none text-on-surface">
+            <span class="material-symbols-outlined text-[240px]">settings_suggest</span>
+          </div>
+          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-space-lg z-10">
+            <div class="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 shadow-sm">
+              <span class="material-symbols-outlined text-[36px]">two_wheeler</span>
+            </div>
+            <div class="flex flex-col">
+              <div class="flex flex-wrap items-center gap-space-sm mb-space-xs">
+                <span class="font-headline-md text-headline-md text-on-surface tracking-tight">${m.merek} ${m.tipe} ${m.varian ? `(${m.varian})` : ''}</span>
+                <span class="bg-surface-container text-on-surface font-mono font-semibold px-space-sm py-0.5 rounded text-label-sm tracking-wider">${m.nomor_polisi || '-'}</span>
+                <span class="bg-secondary-container/40 text-on-secondary-container px-space-xs py-0.5 rounded font-label-sm text-label-sm font-semibold flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm">verified</span> Terverifikasi
+                </span>
+              </div>
+              <div class="flex flex-wrap items-center gap-x-space-md gap-y-space-xs text-on-surface-variant font-body-sm text-body-sm">
+                <span class="flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm">event_repeat</span> Pendaftaran: ${this.formatDate(m.created_at)}
+                </span>
+                <span class="w-1 h-1 rounded-full bg-surface-container-highest"></span>
+                <span class="flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm">history_toggle_off</span> Terakhir diperbarui: ${m.odo_updated_diff || 'Hari ini'}
+                </span>
+                <span class="w-1 h-1 rounded-full bg-surface-container-highest"></span>
+                <span class="flex items-center gap-1 ${sum.merah > 0 ? 'text-primary font-semibold' : 'text-secondary font-semibold'}">
+                  <span class="material-symbols-outlined text-sm">${sum.merah > 0 ? 'notifications_active' : 'check_circle'}</span>
+                  ${sum.merah > 0 ? `${sum.merah} Komponen Mendesak` : 'Semua Komponen Terkalibrasi'}
+                </span>
+              </div>
+            </div>
+          </div>
+          <!-- Live Odometer Counter Card -->
+          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-space-lg z-10 bg-surface-container-low p-space-md rounded-xl">
+            <div class="flex flex-col">
+              <div class="flex items-center justify-between gap-space-sm mb-1">
+                <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Odometer Aktif</span>
+                <span class="bg-surface-container-highest text-on-surface-variant text-[10px] font-semibold px-1.5 py-0.2 rounded font-mono">LIVE WIB</span>
+              </div>
+              <div class="flex items-baseline gap-1">
+                <span class="font-telemetry-num text-telemetry-num font-mono text-on-surface tracking-tight" id="heroOdometerVal">${Number(m.odometer_saat_ini).toLocaleString('id-ID')}</span>
+                <span class="font-title-md text-title-md text-on-surface-variant font-mono">km</span>
+              </div>
+            </div>
+            <button onclick="App.openOdoModal()" class="w-full sm:w-auto flex items-center justify-center gap-space-xs bg-primary hover:bg-primary-container text-on-primary px-space-md py-3 rounded-lg shadow-sm transition-all active:translate-y-0.5 font-label-lg text-label-lg" type="button">
+              <span class="material-symbols-outlined text-lg">speed</span>
+              <span>Update Odometer</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // 4. Update Status KPI Banner
+    const kpiMerah = document.getElementById('kpi-merah-count');
+    const kpiKuning = document.getElementById('kpi-kuning-count');
+    const kpiHijau = document.getElementById('kpi-hijau-count');
+    if (kpiMerah) kpiMerah.textContent = sum.merah;
+    if (kpiKuning) kpiKuning.textContent = sum.kuning;
+    if (kpiHijau) kpiHijau.textContent = sum.hijau;
+
+    // 5. Render Component Cards Grid
+    this.renderComponentCards(comps);
+  },
+
+  renderComponentCards(components) {
+    const grid = document.getElementById('components-grid');
+    if (!grid) return;
+
+    if (!components || components.length === 0) {
+      grid.innerHTML = `
+        <div class="col-span-full bg-surface-container-lowest p-space-xl rounded-xl text-center text-on-surface-variant">
+          Belum ada komponen yang dikonfigurasi untuk sepeda motor ini.
+        </div>
+      `;
+      return;
+    }
+
+    grid.innerHTML = components.map(c => {
+      // Border color and badge styling according to status
+      let borderColor = '#016d38'; // green
+      let badgeBg = 'bg-secondary-container/40 text-on-secondary-container';
+      let iconColor = 'text-secondary';
+      let progressColor = 'bg-secondary';
+      let cardBgGradient = '';
+
+      if (c.status_code === 'merah') {
+        borderColor = '#af101a'; // red
+        badgeBg = 'bg-error-container text-on-error-container';
+        iconColor = 'text-error';
+        progressColor = 'bg-primary';
+        cardBgGradient = 'bg-gradient-to-r from-primary/[0.02] to-transparent';
+      } else if (c.status_code === 'kuning') {
+        borderColor = '#864700'; // amber
+        badgeBg = 'bg-tertiary-fixed text-on-tertiary-fixed';
+        iconColor = 'text-tertiary';
+        progressColor = 'bg-tertiary';
+        cardBgGradient = 'bg-gradient-to-r from-tertiary/[0.02] to-transparent';
+      }
+
+      // Sisa km formatting
+      let sisaKmDisplay = `${Number(c.sisa_km).toLocaleString('id-ID')} km tersisa`;
+      if (c.sisa_km !== null && c.sisa_km < 0) {
+        sisaKmDisplay = `<span class="text-error font-bold font-mono">${Math.abs(c.sisa_km).toLocaleString('id-ID')} km melebihi batas</span>`;
+      } else if (c.sisa_km === 0) {
+        sisaKmDisplay = `<span class="text-error font-bold font-mono">Batas 0 km tercapai</span>`;
+      }
+
+      // Sisa hari formatting
+      let sisaHariDisplay = `${c.sisa_hari} hari tersisa`;
+      if (c.sisa_hari !== null && c.sisa_hari < 0) {
+        sisaHariDisplay = `<span class="text-error font-semibold font-mono">Terlambat ${Math.abs(c.sisa_hari)} hari</span>`;
+      } else if (c.sisa_hari === 0) {
+        sisaHariDisplay = `<span class="text-error font-semibold font-mono">Hari ini jatuh tempo</span>`;
+      }
+
+      return `
+        <div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm border border-[#e4beba]/40 relative overflow-hidden flex flex-col justify-between gap-space-md transition-all hover:shadow-md ${cardBgGradient}">
+          <!-- 4px Left Status Perimeter Strip (Tactile Precision) -->
+          <div class="absolute left-0 top-0 bottom-0 w-1.5" style="background-color: ${borderColor};"></div>
+
+          <div class="space-y-space-sm pl-1">
+            <!-- Header: Title & Status Badge -->
+            <div class="flex items-start justify-between gap-space-xs">
+              <div class="space-y-0.5">
+                <h3 class="font-title-lg text-title-lg text-on-surface font-bold leading-snug">${c.nama_komponen}</h3>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="font-mono text-label-sm text-on-surface-variant font-semibold">Part: ${c.kode_part || 'Belum tersedia'}</span>
+                  ${c.kode_part ? `
+                    <button onclick="navigator.clipboard.writeText('${c.kode_part}'); App.showToast('Kode part disalin!', 'content_copy');" title="Salin Kode Part" class="text-on-surface-variant hover:text-primary transition-colors">
+                      <span class="material-symbols-outlined text-[14px]">content_copy</span>
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
+              <span class="shrink-0 px-space-xs py-1 rounded-full font-label-sm text-label-sm font-semibold flex items-center gap-1 ${badgeBg}">
+                <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">${c.status_icon}</span>
+                <span>${c.status_text}</span>
+              </span>
+            </div>
+
+            <!-- Wear Percentage Progress Bar -->
+            <div class="space-y-1 pt-1">
+              <div class="flex justify-between items-center text-body-sm font-body-sm text-on-surface-variant">
+                <span>Tingkat Keausan</span>
+                <span class="font-mono font-bold ${c.status_code === 'merah' ? 'text-primary' : 'text-on-surface'}">${c.wear_percent}%</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-surface-container overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-500 ${progressColor}" style="width: ${c.wear_percent}%;"></div>
+              </div>
+            </div>
+
+            <!-- Telemetry Metrics Grid -->
+            <div class="grid grid-cols-2 gap-space-xs bg-surface-container-low p-space-sm rounded-lg font-mono text-body-sm text-on-surface">
+              <div class="flex flex-col">
+                <span class="text-[11px] font-sans text-on-surface-variant uppercase tracking-wider">Jarak Tempuh</span>
+                <span class="font-semibold text-[13px]">${sisaKmDisplay}</span>
+                <span class="text-[10px] text-on-surface-variant">Interval: ${c.interval_km ? Number(c.interval_km).toLocaleString('id-ID') + ' km' : '-'}</span>
+              </div>
+              <div class="flex flex-col border-l border-surface-container-high pl-space-xs">
+                <span class="text-[11px] font-sans text-on-surface-variant uppercase tracking-wider">Batas Waktu</span>
+                <span class="font-semibold text-[13px]">${sisaHariDisplay}</span>
+                <span class="text-[10px] text-on-surface-variant">Interval: ${c.interval_bulan ? c.interval_bulan + ' bln' : '-'}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex items-center gap-space-xs pt-space-xs border-t border-surface-container-low pl-1">
+            <button onclick="App.openResetModal(${c.id})" class="flex-1 flex items-center justify-center gap-1.5 bg-primary hover:bg-primary-container text-on-primary py-2.5 px-space-md rounded-lg shadow-sm font-label-md text-label-md font-semibold transition-all active:translate-y-0.5" type="button">
+              <span class="material-symbols-outlined text-base">check</span>
+              <span>Sudah Diganti</span>
+            </button>
+            ${(c.status_code === 'merah' || c.status_code === 'kuning') ? `
+              <button onclick="App.switchTab('peta-bengkel')" title="Cari bengkel terdekat untuk suku cadang ini" class="flex items-center justify-center gap-1 bg-surface-container-low hover:bg-surface-container-high text-on-surface py-2.5 px-space-sm rounded-lg font-label-md text-label-md transition-colors" type="button">
+                <span class="material-symbols-outlined text-primary text-base">near_me</span>
+                <span class="hidden sm:inline">Bengkel</span>
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  // ====================================================
+  // ONE-CLICK RESET (FR-030 - FR-033, BR-008)
+  // ====================================================
+  openResetModal(partId) {
+    const part = this.state.components.find(c => c.id === partId);
+    if (!part) return;
+
+    this.state.activeResetPart = part;
+    const motor = this.state.motor;
+
+    const modal = document.getElementById('modal-reset-component');
+    if (!modal) return;
+
+    document.getElementById('reset-comp-name').textContent = part.nama_komponen;
+    document.getElementById('reset-part-code').textContent = `Kode Part: ${part.kode_part || 'Data belum tersedia'}`;
+    document.getElementById('reset-current-odo-val').textContent = `${Number(motor.odometer_saat_ini).toLocaleString('id-ID')} km`;
+    document.getElementById('reset-odo-input').value = motor.odometer_saat_ini;
+    document.getElementById('reset-date-input').value = new Date().toISOString().split('T')[0];
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  },
+
+  closeResetModal() {
+    const modal = document.getElementById('modal-reset-component');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+    this.state.activeResetPart = null;
+  },
+
+  async submitResetComponent() {
+    const part = this.state.activeResetPart;
+    if (!part) return;
+
+    const odo = parseInt(document.getElementById('reset-odo-input').value, 10);
+    const date = document.getElementById('reset-date-input').value;
+    const bengkel = document.getElementById('reset-bengkel-input').value || 'AHASS 07123 Daya Motor Depok';
+    const biaya = parseInt(document.getElementById('reset-biaya-input').value, 10) || 0;
+    const catatan = document.getElementById('reset-catatan-input').value || 'Penggantian rutin berkala';
+
+    if (isNaN(odo) || odo < 0) {
+      this.showToast('Nilai odometer tidak valid', 'error');
+      return;
+    }
+
+    const res = await this.api('reset_component', 'POST', {
+      user_part_status_id: part.id,
+      odometer: odo,
+      tanggal: date,
+      bengkel,
+      biaya,
+      catatan,
+    });
+
+    if (res.success) {
+      this.closeResetModal();
+      this.showToast(res.message, 'check_circle');
+      this.refreshData();
+    } else {
+      this.showToast(res.error || 'Gagal mereset komponen', 'error');
+    }
+  },
+
+  // ====================================================
+  // ODOMETER UPDATE (FR-020, FR-021, BR-014)
+  // ====================================================
+  openOdoModal() {
+    const m = this.state.motor;
+    if (!m) return;
+
+    const modal = document.getElementById('modal-update-odometer');
+    if (!modal) return;
+
+    const input = document.getElementById('new-odo-input');
+    const currValDisplay = document.getElementById('modal-curr-odo-display');
+    const deltaDisplay = document.getElementById('modal-odo-delta-display');
+    const errorEl = document.getElementById('modal-odo-error');
+
+    currValDisplay.textContent = `${Number(m.odometer_saat_ini).toLocaleString('id-ID')} km`;
+    input.value = Number(m.odometer_saat_ini) + 150;
+    input.min = m.odometer_saat_ini;
+    if (errorEl) errorEl.classList.add('hidden');
+
+    this.calcOdoDelta();
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  },
+
+  closeOdoModal() {
+    const modal = document.getElementById('modal-update-odometer');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+  },
+
+  calcOdoDelta() {
+    const m = this.state.motor;
+    if (!m) return;
+
+    const input = document.getElementById('new-odo-input');
+    const deltaDisplay = document.getElementById('modal-odo-delta-display');
+    const errorEl = document.getElementById('modal-odo-error');
+
+    const val = parseInt(input.value, 10);
+    const curr = parseInt(m.odometer_saat_ini, 10);
+
+    if (isNaN(val) || val < curr) {
+      if (deltaDisplay) deltaDisplay.textContent = `${(val - curr).toLocaleString('id-ID')} km (Tidak valid)`;
+      if (deltaDisplay) deltaDisplay.className = "font-mono font-bold text-error";
+      if (errorEl) {
+        errorEl.textContent = `Angka tidak boleh lebih kecil dari odometer terakhir (${curr.toLocaleString('id-ID')} km).`;
+        errorEl.classList.remove('hidden');
+      }
+    } else {
+      const diff = val - curr;
+      if (deltaDisplay) deltaDisplay.textContent = `+${diff.toLocaleString('id-ID')} km`;
+      if (deltaDisplay) deltaDisplay.className = "font-mono font-bold text-secondary";
+      if (errorEl) errorEl.classList.add('hidden');
+    }
+  },
+
+  async submitOdometer(confirmJump = false) {
+    const m = this.state.motor;
+    if (!m) return;
+
+    const input = document.getElementById('new-odo-input');
+    const val = parseInt(input.value, 10);
+
+    if (isNaN(val) || val < m.odometer_saat_ini) {
+      this.showToast(`Angka tidak boleh lebih kecil dari ${m.odometer_saat_ini.toLocaleString('id-ID')} km`, 'error');
+      return;
+    }
+
+    const res = await this.api('update_odometer', 'POST', {
+      user_motor_id: m.id,
+      odometer: val,
+      confirm_jump: confirmJump,
+    });
+
+    if (res.require_confirmation) {
+      const confirmed = confirm(res.message);
+      if (confirmed) {
+        this.submitOdometer(true);
+      }
+      return;
+    }
+
+    if (res.success) {
+      this.closeOdoModal();
+      this.showToast(res.message, 'speed');
+      this.refreshData();
+    } else {
+      this.showToast(res.error || 'Gagal memperbarui odometer', 'error');
+    }
+  },
+
+  // ====================================================
+  // WORKSHOP FINDER (LEAFLET + OVERPASS API)
+  // ====================================================
+  async initOrUpdateMap() {
+    const mapEl = document.getElementById('leaflet-map');
+    if (!mapEl) return;
+
+    // Load Leaflet map if not initialized
+    if (!this.state.leafletMap) {
+      this.state.leafletMap = L.map('leaflet-map', {
+        zoomControl: true,
+        scrollWheelZoom: true,
+      }).setView([this.state.workshopLocation.lat, this.state.workshopLocation.lng], 14);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19,
+      }).addTo(this.state.leafletMap);
+
+      // Handle map click to manually pick location (FR-045)
+      this.state.leafletMap.on('click', (e) => {
+        this.setManualLocation(e.latlng.lat, e.latlng.lng);
+      });
+    }
+
+    await this.fetchWorkshops();
+  },
+
+  async fetchWorkshops() {
+    const { lat, lng } = this.state.workshopLocation;
+    const radius = this.state.workshopRadius;
+    const filter = this.state.workshopFilter;
+
+    const res = await this.api(`get_workshops&lat=${lat}&lng=${lng}&radius=${radius}&filter=${filter}`);
+    if (res.success) {
+      this.state.workshops = res.workshops || [];
+      this.renderWorkshopList(res.workshops);
+      this.renderMapMarkers(res.workshops);
+
+      // Update counters
+      const countEl = document.getElementById('workshop-result-count');
+      if (countEl) countEl.textContent = `Menampilkan ${res.total_found} bengkel dalam radius ${radius} km`;
+
+      const cntAll = document.getElementById('badge-count-all');
+      const cntResmi = document.getElementById('badge-count-resmi');
+      const cntUmum = document.getElementById('badge-count-umum');
+      if (cntAll) cntAll.textContent = res.counts.all;
+      if (cntResmi) cntResmi.textContent = res.counts.resmi;
+      if (cntUmum) cntUmum.textContent = res.counts.umum;
+    }
+  },
+
+  renderMapMarkers(workshops) {
+    if (!this.state.leafletMap) return;
+
+    // Clear existing markers
+    this.state.mapMarkers.forEach(m => this.state.leafletMap.removeLayer(m));
+    this.state.mapMarkers = [];
+
+    if (this.state.userMarker) {
+      this.state.leafletMap.removeLayer(this.state.userMarker);
+    }
+
+    // Add user position marker
+    const userIcon = L.divIcon({
+      className: 'custom-leaflet-marker marker-user',
+      html: '<span class="material-symbols-outlined text-[18px]">person_pin_circle</span>',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+    });
+    this.state.userMarker = L.marker([this.state.workshopLocation.lat, this.state.workshopLocation.lng], { icon: userIcon })
+      .addTo(this.state.leafletMap)
+      .bindPopup('<strong>Lokasi Anda</strong><br>Titik acuan pencarian GPS');
+
+    // Add workshop markers
+    workshops.forEach(w => {
+      const isResmi = w.type === 'resmi';
+      const markerClass = isResmi ? 'marker-resmi' : 'marker-umum';
+      const iconSymbol = isResmi ? 'stars' : 'build';
+
+      const wIcon = L.divIcon({
+        className: `custom-leaflet-marker ${markerClass}`,
+        html: `<span class="material-symbols-outlined text-[16px]">${iconSymbol}</span>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+      });
+
+      const m = L.marker([w.lat, w.lng], { icon: wIcon })
+        .addTo(this.state.leafletMap)
+        .bindPopup(`
+          <div class="p-1 space-y-1">
+            <span class="font-bold text-xs uppercase px-1.5 py-0.5 rounded ${isResmi ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">${w.brand}</span>
+            <h4 class="font-bold text-sm leading-tight text-gray-900 mt-1">${w.name}</h4>
+            <p class="text-xs text-gray-600">${w.address}</p>
+            <div class="text-xs font-semibold text-gray-800 flex justify-between pt-1">
+              <span>Jarak: ${w.distance_text}</span>
+              <span>⭐ ${w.rating}</span>
+            </div>
+            <a href="https://www.google.com/maps/search/?api=1&query=${w.lat},${w.lng}" target="_blank" class="block text-center mt-2 bg-red-600 text-white py-1 px-2 rounded text-xs font-semibold">
+              Buka Google Maps
+            </a>
+          </div>
+        `);
+
+      this.state.mapMarkers.push(m);
+    });
+
+    this.state.leafletMap.setView([this.state.workshopLocation.lat, this.state.workshopLocation.lng], 14);
+  },
+
+  renderWorkshopList(workshops) {
+    const listEl = document.getElementById('workshop-list-container');
+    if (!listEl) return;
+
+    if (!workshops || workshops.length === 0) {
+      listEl.innerHTML = `
+        <div class="bg-surface-container-lowest p-space-lg rounded-xl text-center text-on-surface-variant">
+          <span class="material-symbols-outlined text-4xl text-on-surface-variant/40 mb-2">location_off</span>
+          <p class="font-semibold text-on-surface">Tidak ada bengkel ditemukan dalam radius ${this.state.workshopRadius} km</p>
+          <p class="text-body-sm mt-1">Coba perbesar radius pencarian menjadi 10 km atau pilih lokasi lain.</p>
+        </div>
+      `;
+      return;
+    }
+
+    listEl.innerHTML = workshops.map(w => {
+      const isResmi = w.type === 'resmi';
+      return `
+        <article onclick="App.focusWorkshop(${w.lat}, ${w.lng})" class="workshop-card relative bg-surface-container-lowest rounded-xl p-space-md shadow-sm transition-all duration-200 cursor-pointer hover:shadow-md border border-[#e4beba]/30">
+          <div class="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl ${isResmi ? 'bg-primary' : 'bg-secondary'}"></div>
+          <div class="flex items-start justify-between gap-space-sm pl-space-xs">
+            <div class="space-y-1 flex-1">
+              <div class="flex flex-wrap items-center gap-space-xs">
+                <span class="inline-flex items-center gap-1 px-space-xs py-0.5 rounded font-label-sm text-label-sm font-bold ${isResmi ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'}">
+                  <span class="material-symbols-outlined text-[14px]">${isResmi ? 'stars' : 'verified'}</span>
+                  ${w.brand.toUpperCase()}
+                </span>
+                <span class="font-mono text-label-sm ${isResmi ? 'text-primary' : 'text-secondary'} font-bold">${w.dealer_code}</span>
+              </div>
+              <h3 class="font-title-lg text-title-lg text-on-surface font-bold leading-tight">${w.name}</h3>
+              <p class="font-body-sm text-body-sm text-on-surface-variant flex items-start gap-1">
+                <span class="material-symbols-outlined text-[16px] text-on-surface-variant shrink-0 mt-0.5">pin_drop</span>
+                <span>${w.address}</span>
+              </p>
+              <div class="flex flex-wrap items-center gap-x-space-md gap-y-1 pt-1 text-body-sm text-on-surface-variant">
+                <span class="flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[14px]">call</span> ${w.phone}
+                </span>
+                <span class="flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[14px]">schedule</span> ${w.hours}
+                </span>
+              </div>
+              <div class="pt-1 text-[11px] font-semibold ${isResmi ? 'text-primary' : 'text-secondary'}">
+                ${w.parts_stock}
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-2 shrink-0">
+              <span class="bg-surface-container px-space-sm py-1 rounded font-mono font-bold text-on-surface text-label-md">
+                ${w.distance_text}
+              </span>
+              <a href="https://www.google.com/maps/search/?api=1&query=${w.lat},${w.lng}" target="_blank" onclick="event.stopPropagation()" class="p-2 hover:bg-surface-container rounded-lg text-primary transition-colors" title="Buka Rute Navigasi">
+                <span class="material-symbols-outlined">directions</span>
+              </a>
+            </div>
+          </div>
+        </article>
+      `;
+    }).join('');
+  },
+
+  focusWorkshop(lat, lng) {
+    if (!this.state.leafletMap) return;
+    this.state.leafletMap.flyTo([lat, lng], 16, { duration: 1 });
+  },
+
+  requestUserLocation() {
+    if (!navigator.geolocation) {
+      this.showToast('Geolocation tidak didukung peramban ini', 'error');
+      return;
+    }
+
+    this.showToast('Meminta koordinat GPS...', 'my_location');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        this.setManualLocation(pos.coords.latitude, pos.coords.longitude, 'Lokasi GPS Anda');
+        this.showToast('Lokasi GPS berhasil didapatkan!', 'check_circle');
+      },
+      (err) => {
+        console.warn('Geolocation denied/error:', err);
+        this.showToast('Izin lokasi ditolak. Menggunakan lokasi acuan Margonda Depok. Anda dapat klik peta untuk memilih lokasi manual.', 'info');
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  },
+
+  setManualLocation(lat, lng, label = 'Titik Pilihan Manual') {
+    this.state.workshopLocation = { lat, lng };
+    const labelEl = document.getElementById('gps-acuan-label');
+    if (labelEl) labelEl.textContent = label;
+    this.fetchWorkshops();
+  },
+
+  setWorkshopFilter(filterType) {
+    this.state.workshopFilter = filterType;
+    // Update filter toggle buttons
+    ['all', 'resmi', 'umum'].forEach(t => {
+      const btn = document.getElementById(`filter-btn-${t}`);
+      if (btn) {
+        if (t === filterType) {
+          btn.className = "flex items-center gap-2 px-space-md py-space-xs rounded-lg font-label-md text-label-md transition-all bg-on-surface text-inverse-on-surface shadow-sm";
+        } else {
+          btn.className = "flex items-center gap-2 px-space-md py-space-xs rounded-lg font-label-md text-label-md transition-all bg-surface-container-lowest text-on-surface hover:bg-surface-container shadow-sm";
+        }
+      }
+    });
+    this.fetchWorkshops();
+  },
+
+  setWorkshopRadius(radius) {
+    this.state.workshopRadius = parseInt(radius, 10);
+    this.fetchWorkshops();
+  },
+
+  // ====================================================
+  // SERVICE HISTORY (FR-034, FR-035, BR-016, BR-017)
+  // ====================================================
+  async loadHistory() {
+    const res = await this.api('get_history');
+    if (res.success) {
+      this.state.historyRecords = res.records || [];
+      this.state.historyMetrics = res.metrics || {};
+      this.renderHistory();
+    }
+  },
+
+  renderHistory() {
+    const records = this.state.historyRecords;
+    const m = this.state.historyMetrics;
+
+    // Update Telemetry Strip
+    const totalServisEl = document.getElementById('hist-total-servis');
+    const totalBiayaEl = document.getElementById('hist-total-biaya');
+    const firstOdoEl = document.getElementById('hist-first-odo');
+    const lastOdoEl = document.getElementById('hist-last-odo');
+
+    if (totalServisEl) totalServisEl.textContent = `${m.total_services || 0} Kali`;
+    if (totalBiayaEl) totalBiayaEl.textContent = `Rp ${(m.total_cost || 0).toLocaleString('id-ID')}`;
+    if (firstOdoEl) firstOdoEl.textContent = `${(m.first_odo || 0).toLocaleString('id-ID')} km`;
+    if (lastOdoEl) lastOdoEl.textContent = `${(m.last_odo || 0).toLocaleString('id-ID')} km`;
+
+    // Filter controls
+    const compFilter = document.getElementById('hist-filter-component') ? document.getElementById('hist-filter-component').value : 'all';
+    const searchVal = document.getElementById('hist-search-input') ? document.getElementById('hist-search-input').value.toLowerCase() : '';
+
+    const filtered = records.filter(r => {
+      if (compFilter !== 'all' && !r.nama_komponen.toLowerCase().includes(compFilter.toLowerCase())) {
+        return false;
+      }
+      if (searchVal && !r.nama_komponen.toLowerCase().includes(searchVal) && !(r.bengkel || '').toLowerCase().includes(searchVal) && !(r.kode_part || '').toLowerCase().includes(searchVal)) {
+        return false;
+      }
+      return true;
+    });
+
+    const tbody = document.getElementById('history-table-body');
+    if (!tbody) return;
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="p-space-xl text-center text-on-surface-variant font-body-md">
+            Belum ada riwayat penggantian servis yang tercatat (FR-034).
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(r => {
+      const isCancelled = r.status === 'dibatalkan';
+      const statusBadge = isCancelled
+        ? `<span class="bg-surface-container-high text-on-surface-variant px-space-xs py-0.5 rounded font-mono text-label-sm font-semibold">Dibatalkan</span>`
+        : `<span class="bg-secondary-container/40 text-on-secondary-container px-space-xs py-0.5 rounded font-label-sm text-label-sm font-semibold flex items-center gap-1 w-fit"><span class="material-symbols-outlined text-xs">verified</span> Aktif</span>`;
+
+      // Cancel button per BR-016
+      const cancelBtn = r.can_cancel ? `
+        <button onclick="App.cancelService(${r.id})" class="text-error hover:bg-error-container/30 px-2 py-1 rounded text-label-sm font-semibold flex items-center gap-1 transition-colors" title="Batalkan penggantian ini dalam 24 jam (BR-016)">
+          <span class="material-symbols-outlined text-sm">undo</span>
+          <span>Batalkan</span>
+        </button>
+      ` : '-';
+
+      return `
+        <tr class="border-b border-surface-container-low hover:bg-surface-container-low/50 transition-colors ${isCancelled ? 'opacity-60 bg-surface-container-lowest/40' : ''}">
+          <td class="p-space-md font-mono text-body-sm font-semibold text-on-surface">${this.formatDate(r.tanggal_ganti)}</td>
+          <td class="p-space-md">
+            <div class="font-semibold text-on-surface">${r.nama_komponen}</div>
+            <div class="font-mono text-body-sm text-on-surface-variant">${r.kode_part || '-'}</div>
+          </td>
+          <td class="p-space-md font-mono text-body-sm text-on-surface">${Number(r.odometer_saat_ganti).toLocaleString('id-ID')} km</td>
+          <td class="p-space-md text-body-sm text-on-surface-variant">${r.bengkel || '-'}</td>
+          <td class="p-space-md font-mono text-body-sm text-on-surface">Rp ${Number(r.biaya || 0).toLocaleString('id-ID')}</td>
+          <td class="p-space-md">${statusBadge}</td>
+          <td class="p-space-md text-right">${cancelBtn}</td>
+        </tr>
+      `;
+    }).join('');
+  },
+
+  async cancelService(serviceId) {
+    const confirmed = confirm('Batalkan penggantian ini? Titik awal (baseline) odometer dan tanggal komponen akan dikembalikan ke data sebelumnya (Sesuai aturan BR-016).');
+    if (!confirmed) return;
+
+    const res = await this.api('cancel_service', 'POST', { service_id: serviceId });
+    if (res.success) {
+      this.showToast(res.message, 'undo');
+      this.loadHistory();
+      this.refreshData();
+    } else {
+      this.showToast(res.error || 'Gagal membatalkan servis', 'error');
+    }
+  },
+
+  // Manual service modal
+  openManualServiceModal() {
+    const modal = document.getElementById('modal-manual-service');
+    if (!modal) return;
+    document.getElementById('manual-serv-date').value = new Date().toISOString().split('T')[0];
+    if (this.state.motor) {
+      document.getElementById('manual-serv-odo').value = this.state.motor.odometer_saat_ini;
+    }
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  },
+
+  closeManualServiceModal() {
+    const modal = document.getElementById('modal-manual-service');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+  },
+
+  async submitManualService() {
+    const motor = this.state.motor;
+    if (!motor) return;
+
+    const nama = document.getElementById('manual-serv-name').value;
+    const kode = document.getElementById('manual-serv-part-code').value;
+    const odo = parseInt(document.getElementById('manual-serv-odo').value, 10);
+    const date = document.getElementById('manual-serv-date').value;
+    const bengkel = document.getElementById('manual-serv-bengkel').value;
+    const biaya = parseInt(document.getElementById('manual-serv-cost').value, 10) || 0;
+    const catatan = document.getElementById('manual-serv-notes').value;
+
+    if (!nama || isNaN(odo) || odo <= 0) {
+      this.showToast('Nama komponen dan odometer wajib diisi', 'error');
+      return;
+    }
+
+    const res = await this.api('add_manual_service', 'POST', {
+      user_motor_id: motor.id,
+      nama_komponen: nama,
+      kode_part: kode,
+      odometer: odo,
+      tanggal: date,
+      bengkel,
+      biaya,
+      catatan,
+    });
+
+    if (res.success) {
+      this.closeManualServiceModal();
+      this.showToast(res.message, 'check_circle');
+      this.loadHistory();
+    } else {
+      this.showToast(res.error || 'Gagal menyimpan servis manual', 'error');
+    }
+  },
+
+  // ====================================================
+  // BUKU SERVIS DIGITAL (PDF EXPORT, FR-050 - FR-053)
+  // ====================================================
+  async renderPdfSheet() {
+    await this.loadHistory();
+    const m = this.state.motor;
+    const u = this.state.user;
+    const records = (this.state.historyRecords || []).filter(r => r.status === 'aktif');
+
+    // Document Meta
+    const docIdEl = document.getElementById('pdf-doc-id');
+    const docOwnerEl = document.getElementById('pdf-doc-owner');
+    const docBikeEl = document.getElementById('pdf-doc-bike');
+    const docPlateEl = document.getElementById('pdf-doc-plate');
+    const docOdoEl = document.getElementById('pdf-doc-odo');
+    const docDateEl = document.getElementById('pdf-doc-date');
+
+    const docId = `MC-${new Date().getFullYear()}-${m ? String(m.id).padStart(4, '0') : '0000'}A`;
+    if (docIdEl) docIdEl.textContent = docId;
+    if (docOwnerEl) docOwnerEl.textContent = u ? u.nama : '-';
+    if (docBikeEl) docBikeEl.textContent = m ? `${m.merek} ${m.tipe} ${m.varian ? `(${m.varian})` : ''}` : '-';
+    if (docPlateEl) docPlateEl.textContent = m ? m.nomor_polisi : '-';
+    if (docOdoEl) docOdoEl.textContent = m ? `${Number(m.odometer_saat_ini).toLocaleString('id-ID')} km` : '-';
+    if (docDateEl) docDateEl.textContent = this.formatDate(new Date().toISOString());
+
+    // Render Table in PDF Sheet
+    const tableBody = document.getElementById('pdf-table-body');
+    const emptyNotice = document.getElementById('pdf-empty-notice');
+
+    if (records.length === 0) {
+      if (tableBody) tableBody.innerHTML = '';
+      if (emptyNotice) emptyNotice.classList.remove('hidden');
+    } else {
+      if (emptyNotice) emptyNotice.classList.add('hidden');
+      if (tableBody) {
+        tableBody.innerHTML = records.map((r, i) => `
+          <tr class="border-b border-[#e4beba]/30">
+            <td class="py-2.5 px-3 text-center font-mono text-xs">${i + 1}</td>
+            <td class="py-2.5 px-3 font-mono text-xs">${this.formatDate(r.tanggal_ganti)}</td>
+            <td class="py-2.5 px-3 font-semibold text-xs text-gray-900">${r.nama_komponen}</td>
+            <td class="py-2.5 px-3 font-mono text-xs text-gray-600">${r.kode_part || '-'}</td>
+            <td class="py-2.5 px-3 font-mono text-xs font-semibold text-right">${Number(r.odometer_saat_ganti).toLocaleString('id-ID')} km</td>
+            <td class="py-2.5 px-3 text-xs text-gray-700">${r.bengkel || '-'}</td>
+          </tr>
+        `).join('');
+      }
+    }
+  },
+
+  downloadPdf() {
+    const element = document.getElementById('pdf-document-sheet');
+    if (!element) return;
+
+    this.showToast('Menyusun berkas PDF resmi...', 'picture_as_pdf');
+
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename: `Buku_Servis_MotoCare_${(this.state.motor && this.state.motor.nomor_polisi) ? this.state.motor.nomor_polisi.replace(/\s+/g, '_') : 'Motor'}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    if (window.html2pdf) {
+      html2pdf().set(opt).from(element).save().then(() => {
+        this.showToast('Buku Servis PDF berhasil diunduh!', 'check_circle');
+      }).catch(err => {
+        console.error('PDF Export Error:', err);
+        window.print();
+      });
+    } else {
+      window.print();
+    }
+  },
+
+  zoomPdf(delta) {
+    this.state.zoomLevel = Math.max(50, Math.min(150, this.state.zoomLevel + delta));
+    const sheet = document.getElementById('pdf-document-sheet');
+    const label = document.getElementById('pdf-zoom-text');
+    if (sheet) sheet.style.transform = `scale(${this.state.zoomLevel / 100})`;
+    if (label) label.textContent = `${this.state.zoomLevel}%`;
+  },
+
+  // ====================================================
+  // MOTOR REGISTRATION (FR-010 - FR-014)
+  // ====================================================
+  async loadCatalog() {
+    const res = await this.api('get_catalog');
+    if (res.success) {
+      this.state.catalog = res.catalog || [];
+      this.populateCatalogSelects();
+    }
+  },
+
+  populateCatalogSelects() {
+    const brandSelect = document.getElementById('reg-brand-select');
+    const typeSelect = document.getElementById('reg-type-select');
+    if (!brandSelect || !typeSelect) return;
+
+    // Get unique brands
+    const brands = [...new Set(this.state.catalog.map(c => c.merek))];
+    brandSelect.innerHTML = '<option value="">-- Pilih Merek Motor --</option>' + brands.map(b => `<option value="${b}">${b}</option>`).join('');
+
+    brandSelect.onchange = () => {
+      const selectedBrand = brandSelect.value;
+      const filtered = this.state.catalog.filter(c => c.merek === selectedBrand);
+      typeSelect.innerHTML = '<option value="">-- Pilih Tipe Motor --</option>' + filtered.map(t => `<option value="${t.id}">${t.tipe} ${t.varian ? `(${t.varian})` : ''}</option>`).join('');
+      typeSelect.disabled = false;
+      this.renderBaselineInputs(null);
+    };
+
+    typeSelect.onchange = () => {
+      const typeId = parseInt(typeSelect.value, 10);
+      const selectedMotor = this.state.catalog.find(c => c.id === typeId);
+      this.renderBaselineInputs(selectedMotor ? selectedMotor.parts : null);
+    };
+  },
+
+  renderBaselineInputs(parts) {
+    const container = document.getElementById('reg-custom-baselines-container');
+    if (!container) return;
+
+    if (!parts || parts.length === 0) {
+      container.innerHTML = '<p class="text-xs text-on-surface-variant">Pilih tipe motor untuk melihat suku cadang bawaan.</p>';
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="text-xs font-semibold text-on-surface mb-2">Titik Awal Penggantian Terakhir Komponen (Opsional per FR-013):</div>
+      <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
+        ${parts.map(p => `
+          <div class="bg-surface-container-low p-2 rounded text-xs grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
+            <span class="font-semibold text-on-surface">${p.nama_komponen}</span>
+            <input type="number" data-part-id="${p.id}" class="custom-base-odo bg-surface-container-lowest p-1.5 rounded border border-[#e4beba]/60" placeholder="Odo ganti (km)">
+            <input type="date" data-part-id="${p.id}" class="custom-base-date bg-surface-container-lowest p-1.5 rounded border border-[#e4beba]/60">
+          </div>
+        `).join('')}
+      </div>
+    `;
+  },
+
+  async submitRegisterMotor() {
+    const typeSelect = document.getElementById('reg-type-select');
+    const plateInput = document.getElementById('reg-plate-input');
+    const odoInput = document.getElementById('reg-odo-input');
+
+    const motorId = parseInt(typeSelect.value, 10);
+    const plate = plateInput.value.trim();
+    const odo = parseInt(odoInput.value, 10);
+
+    if (isNaN(motorId) || !plate || isNaN(odo) || odo < 0) {
+      this.showToast('Harap lengkapi tipe motor, nomor polisi, dan odometer saat ini', 'error');
+      return;
+    }
+
+    // Collect custom baselines if any
+    const customBaselines = {};
+    document.querySelectorAll('.custom-base-odo').forEach(el => {
+      const partId = el.getAttribute('data-part-id');
+      const odoVal = el.value ? parseInt(el.value, 10) : null;
+      const dateEl = document.querySelector(`.custom-base-date[data-part-id="${partId}"]`);
+      const dateVal = dateEl ? dateEl.value : null;
+
+      if (odoVal !== null || dateVal) {
+        customBaselines[partId] = { odometer: odoVal, tanggal: dateVal };
+      }
+    });
+
+    const res = await this.api('register_motor', 'POST', {
+      master_motor_id: motorId,
+      nomor_polisi: plate,
+      odometer: odo,
+      custom_baselines: customBaselines,
+    });
+
+    if (res.success) {
+      this.showToast(res.message, 'two_wheeler');
+      await this.refreshData();
+      this.switchTab('dashboard');
+    } else {
+      this.showToast(res.error || 'Pendaftaran motor gagal', 'error');
+    }
+  },
+
+  // ====================================================
+  // ADMIN DATA MASTER (FR-060 - FR-063)
+  // ====================================================
+  async loadAdminData() {
+    if (!this.state.user || this.state.user.role !== 'admin') {
+      this.showToast('Halaman ini khusus Administrator', 'error');
+      this.switchTab('dashboard');
+      return;
+    }
+
+    const res = await this.api('admin_get_master');
+    if (res.success) {
+      this.renderAdminMotors(res.motors || []);
+      this.renderAdminParts(res.parts || [], res.motors || []);
+    }
+  },
+
+  renderAdminMotors(motors) {
+    const tbody = document.getElementById('admin-motor-table-body');
+    if (!tbody) return;
+
+    tbody.innerHTML = motors.map(m => `
+      <tr class="border-b border-surface-container-low">
+        <td class="p-space-sm font-mono text-xs">${m.id}</td>
+        <td class="p-space-sm font-bold text-xs">${m.merek}</td>
+        <td class="p-space-sm text-xs font-semibold">${m.tipe}</td>
+        <td class="p-space-sm text-xs text-on-surface-variant">${m.varian || '-'}</td>
+        <td class="p-space-sm font-mono text-xs">${m.used_count || 0} pengguna</td>
+        <td class="p-space-sm">
+          <span class="px-2 py-0.5 rounded text-[11px] font-semibold ${m.aktif ? 'bg-secondary-container/40 text-on-secondary-container' : 'bg-error-container text-on-error-container'}">
+            ${m.aktif ? 'Aktif' : 'Nonaktif'}
+          </span>
+        </td>
+        <td class="p-space-sm text-right space-x-1">
+          <button onclick="App.toggleMotorStatus(${m.id}, ${m.aktif ? 0 : 1})" class="text-xs px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high transition-colors">
+            ${m.aktif ? 'Nonaktifkan' : 'Aktifkan'}
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  },
+
+  renderAdminParts(parts, motors) {
+    const tbody = document.getElementById('admin-part-table-body');
+    const selectMotor = document.getElementById('admin-part-motor-select');
+    if (!tbody) return;
+
+    if (selectMotor) {
+      selectMotor.innerHTML = motors.map(m => `<option value="${m.id}">${m.merek} ${m.tipe}</option>`).join('');
+    }
+
+    tbody.innerHTML = parts.map(p => `
+      <tr class="border-b border-surface-container-low">
+        <td class="p-space-sm font-mono text-xs">${p.id}</td>
+        <td class="p-space-sm text-xs font-semibold">${p.merek} ${p.tipe}</td>
+        <td class="p-space-sm text-xs font-bold">${p.nama_komponen}</td>
+        <td class="p-space-sm font-mono text-xs">${p.interval_km ? Number(p.interval_km).toLocaleString('id-ID') + ' km' : '-'}</td>
+        <td class="p-space-sm font-mono text-xs">${p.interval_bulan ? p.interval_bulan + ' bln' : '-'}</td>
+        <td class="p-space-sm font-mono text-xs text-primary font-bold">${p.kode_part_rekomendasi || '-'}</td>
+        <td class="p-space-sm">
+          <span class="px-2 py-0.5 rounded text-[11px] font-semibold ${p.aktif ? 'bg-secondary-container/40 text-on-secondary-container' : 'bg-error-container text-on-error-container'}">
+            ${p.aktif ? 'Aktif' : 'Nonaktif'}
+          </span>
+        </td>
+        <td class="p-space-sm text-right">
+          <button onclick="App.togglePartStatus(${p.id}, ${p.aktif ? 0 : 1})" class="text-xs px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high transition-colors">
+            ${p.aktif ? 'Nonaktifkan' : 'Aktifkan'}
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  },
+
+  async toggleMotorStatus(id, status) {
+    const res = await this.api('admin_toggle_motor', 'POST', { id, status });
+    if (res.success) {
+      this.showToast(res.message, 'check_circle');
+      this.loadAdminData();
+    }
+  },
+
+  async togglePartStatus(id, status) {
+    const res = await this.api('admin_toggle_part', 'POST', { id, status });
+    if (res.success) {
+      this.showToast(res.message, 'check_circle');
+      this.loadAdminData();
+    }
+  },
+
+  // Add new master motor modal
+  openAddMotorModal() {
+    const m = prompt('Masukkan Merek (contoh: Honda):');
+    if (!m) return;
+    const t = prompt('Masukkan Tipe (contoh: Stylo 160):');
+    if (!t) return;
+    const v = prompt('Masukkan Varian/Tahun (contoh: 2024):');
+
+    this.api('admin_save_motor', 'POST', { merek: m, tipe: t, varian: v }).then(res => {
+      if (res.success) {
+        this.showToast(res.message, 'check_circle');
+        this.loadAdminData();
+      } else {
+        this.showToast(res.error, 'error');
+      }
+    });
+  },
+
+  // Add new master part modal
+  openAddPartModal() {
+    const modal = document.getElementById('modal-add-master-part');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+  },
+
+  closeAddPartModal() {
+    const modal = document.getElementById('modal-add-master-part');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+  },
+
+  async submitAddMasterPart() {
+    const motorId = parseInt(document.getElementById('admin-part-motor-select').value, 10);
+    const nama = document.getElementById('admin-part-nama').value.trim();
+    const km = parseInt(document.getElementById('admin-part-km').value, 10) || null;
+    const bln = parseInt(document.getElementById('admin-part-bulan').value, 10) || null;
+    const kode = document.getElementById('admin-part-kode').value.trim();
+
+    const res = await this.api('admin_save_part', 'POST', {
+      master_motor_id: motorId,
+      nama_komponen: nama,
+      interval_km: km,
+      interval_bulan: bln,
+      kode_part_rekomendasi: kode,
+    });
+
+    if (res.success) {
+      this.closeAddPartModal();
+      this.showToast(res.message, 'check_circle');
+      this.loadAdminData();
+    } else {
+      this.showToast(res.error, 'error');
+    }
+  },
+
+  // ====================================================
+  // AUTH & USER SWITCHER (DEMO PURPOSE)
+  // ====================================================
+  openUserSwitcher() {
+    const modal = document.getElementById('modal-user-switcher');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+  },
+
+  closeUserSwitcher() {
+    const modal = document.getElementById('modal-user-switcher');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+  },
+
+  async switchAccount(email) {
+    const res = await this.api('switch_user', 'POST', { email });
+    if (res.success) {
+      this.closeUserSwitcher();
+      this.state.user = res.user;
+      this.updateUserUI();
+      this.showToast(res.message, 'account_circle');
+      await this.refreshData();
+      this.switchTab('dashboard');
+    } else {
+      this.showToast(res.error, 'error');
+    }
+  },
+
+  // ====================================================
+  // UTILITIES & EVENT BINDINGS
+  // ====================================================
+  formatDate(dateStr) {
+    if (!dateStr) return '-';
+    try {
+      const d = new Date(dateStr);
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+      return `${String(d.getDate()).padStart(2, '0')} ${months[d.getMonth()]} ${d.getFullYear()}`;
+    } catch (e) {
+      return dateStr;
+    }
+  },
+
+  showToast(msg, iconName = 'check_circle') {
+    const toast = document.getElementById('toastNotification');
+    const toastText = document.getElementById('toastText');
+    const toastIcon = document.getElementById('toastIcon');
+
+    if (!toast || !toastText) return;
+
+    toastText.textContent = msg;
+    if (toastIcon) toastIcon.textContent = iconName;
+
+    toast.classList.remove('translate-y-20', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+
+    setTimeout(() => {
+      toast.classList.add('translate-y-20', 'opacity-0');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+    }, 4000);
+  },
+
+  bindEvents() {
+    // Escape key closes modals
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        this.closeResetModal();
+        this.closeOdoModal();
+        this.closeManualServiceModal();
+        this.closeAddPartModal();
+        this.closeUserSwitcher();
+      }
+    });
+
+    // Odometer delta live calc
+    const odoInput = document.getElementById('new-odo-input');
+    if (odoInput) {
+      odoInput.addEventListener('input', () => this.calcOdoDelta());
+    }
+
+    // History filter events
+    const histCompFilter = document.getElementById('hist-filter-component');
+    if (histCompFilter) {
+      histCompFilter.addEventListener('change', () => this.renderHistory());
+    }
+    const histSearch = document.getElementById('hist-search-input');
+    if (histSearch) {
+      histSearch.addEventListener('input', () => this.renderHistory());
+    }
+  }
+};
+
+// Auto start application on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+  App.init();
+});

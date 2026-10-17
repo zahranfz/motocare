@@ -1,0 +1,130 @@
+/* MotoCare Digital - Custom Styles & Micro-Animations */
+
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #1d1b19;
+    background-color: #fef8f3;
+  }
+}
+
+/* Custom Scrollbar for tactile mechanical look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f2ede8;
+}
+::-webkit-scrollbar-thumb {
+  background: #ded9d4;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #8f6f6c;
+}
+
+/* Smooth Tab Transitions */
+.tab-content {
+  display: none;
+  animation: fadeInTab 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.tab-content.active {
+  display: block;
+}
+
+@keyframes fadeInTab {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Status indicator pulse */
+.pulse-red {
+  box-shadow: 0 0 0 0 rgba(175, 16, 26, 0.5);
+  animation: pulseRed 2s infinite;
+}
+@keyframes pulseRed {
+  0% { box-shadow: 0 0 0 0 rgba(175, 16, 26, 0.5); }
+  70% { box-shadow: 0 0 0 8px rgba(175, 16, 26, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(175, 16, 26, 0); }
+}
+
+.pulse-yellow {
+  box-shadow: 0 0 0 0 rgba(134, 71, 0, 0.5);
+  animation: pulseYellow 2s infinite;
+}
+@keyframes pulseYellow {
+  0% { box-shadow: 0 0 0 0 rgba(134, 71, 0, 0.5); }
+  70% { box-shadow: 0 0 0 8px rgba(134, 71, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(134, 71, 0, 0); }
+}
+
+/* Leaflet Custom Marker Styling */
+.custom-leaflet-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  border: 2px solid #ffffff;
+  transition: transform 0.2s ease;
+}
+.custom-leaflet-marker:hover {
+  transform: scale(1.15);
+}
+.marker-resmi {
+  background: #af101a;
+  color: #ffffff;
+}
+.marker-umum {
+  background: #016d38;
+  color: #ffffff;
+}
+.marker-user {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+/* PDF Document A4 Sheet Simulation */
+#pdf-document-sheet {
+  background: #ffffff;
+  color: #1d1b19;
+  width: 100%;
+  max-width: 820px;
+  margin: 0 auto;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  border: 1px solid #e6e2dd;
+}
+
+/* Print Media Query */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  header, footer, nav, #pdf-command-bar, #pdf-sidebar, .no-print {
+    display: none !important;
+  }
+  #pdf-document-sheet, #pdf-document-sheet * {
+    visibility: visible;
+  }
+  #pdf-document-sheet {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
