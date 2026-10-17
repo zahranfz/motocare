@@ -127,75 +127,61 @@
 <body class="bg-surface font-body-md text-on-surface min-h-screen flex flex-col selection:bg-primary/20 selection:text-primary">
 
   <!-- ======================================================== -->
-  <!-- TOP HEADER & TELEMETRY NAV (Stitch Red & Beige Architecture) -->
   <!-- ======================================================== -->
-  <header class="fixed top-0 w-full z-40 bg-surface/90 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-b border-surface-container-high/60">
-    <div class="h-20 max-w-[1320px] mx-auto px-margin md:px-margin-md lg:px-margin-lg flex items-center justify-between gap-space-md">
+  <!-- TOP HEADER (Clean, Minimalist, Responsive) -->
+  <!-- ======================================================== -->
+  <header class="fixed top-0 w-full z-40 bg-surface/95 backdrop-blur-md shadow-[0_1px_4px_rgba(0,0,0,0.03)] border-b border-surface-container-high/60">
+    <div class="h-16 max-w-[1320px] mx-auto px-4 md:px-6 flex items-center justify-between gap-4">
       
-      <!-- Brand & Active Motor Pill -->
-      <div class="flex items-center gap-space-lg">
-        <a href="#dashboard" class="flex items-center gap-space-sm group">
-          <div class="w-10 h-10 rounded-xl bg-primary text-on-primary flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-            <span class="material-symbols-outlined text-2xl">two_wheeler</span>
-          </div>
-          <div class="flex flex-col">
-            <span class="font-headline-md text-headline-md tracking-tight text-on-surface leading-none">MotoCare</span>
-            <span class="font-label-sm text-[11px] text-primary uppercase tracking-widest font-bold">Digital Telemetry</span>
-          </div>
-        </a>
-
-        <div class="h-8 w-px bg-surface-container-high hidden lg:block"></div>
-
-        <!-- Active Bike Selector Pill -->
-        <div id="header-active-bike" onclick="App.switchTab('daftar-motor')" title="Klik untuk mendaftarkan atau melihat motor" class="hidden sm:flex items-center gap-space-sm bg-surface-container-lowest px-space-md py-space-xs rounded-xl shadow-[0_1px_3px_rgba(30,37,43,0.05)] border border-[#e4beba]/40 cursor-pointer hover:bg-surface-container-high transition-all">
-          <span class="material-symbols-outlined text-primary text-title-lg">two_wheeler</span>
-          <div class="flex flex-col text-left">
-            <span class="font-title-md text-title-md leading-tight text-on-surface">Honda Vario 160</span>
-            <span class="font-label-sm text-label-sm text-on-surface-variant font-mono">B 4821 KRO</span>
-          </div>
-          <span class="material-symbols-outlined text-on-surface-variant text-label-lg">unfold_more</span>
+      <!-- Brand Logo -->
+      <a href="#dashboard" class="flex items-center gap-2.5 group shrink-0">
+        <div class="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+          <span class="material-symbols-outlined text-2xl">two_wheeler</span>
         </div>
-      </div>
+        <div class="flex items-center gap-1.5">
+          <span class="font-headline-md text-xl tracking-tight text-on-surface font-bold">MotoCare</span>
+          <span class="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary">Digital</span>
+        </div>
+      </a>
 
-      <!-- Main Navigation Menu -->
-      <nav class="hidden xl:flex items-center gap-space-xs bg-surface-container-low p-space-xs rounded-xl border border-surface-container-high/60">
-        <a href="#dashboard" data-nav-tab="dashboard" class="px-space-md py-space-sm transition-colors bg-primary-container text-on-primary-container font-label-lg rounded-lg">
-          Dashboard Servis
+      <!-- Main Navigation Menu (Clean & Compact) -->
+      <nav class="hidden md:flex items-center gap-1 bg-surface-container-low p-1 rounded-xl border border-surface-container-high/60">
+        <a href="#dashboard" data-nav-tab="dashboard" class="px-3.5 py-1.5 transition-colors bg-primary text-white font-semibold font-label-md text-label-md rounded-lg shadow-xs">
+          Dashboard
         </a>
-        <a href="#peta-bengkel" data-nav-tab="peta-bengkel" class="px-space-md py-space-sm transition-colors text-on-surface-variant font-label-lg hover:text-on-surface">
-          Cari Bengkel Terdekat
+        <a href="#peta-bengkel" data-nav-tab="peta-bengkel" class="px-3.5 py-1.5 transition-colors text-on-surface-variant font-label-md text-label-md hover:text-on-surface hover:bg-surface-container rounded-lg">
+          Bengkel
         </a>
-        <a href="#riwayat-servis" data-nav-tab="riwayat-servis" class="px-space-md py-space-sm transition-colors text-on-surface-variant font-label-lg hover:text-on-surface">
-          Riwayat Servis
+        <a href="#riwayat-servis" data-nav-tab="riwayat-servis" class="px-3.5 py-1.5 transition-colors text-on-surface-variant font-label-md text-label-md hover:text-on-surface hover:bg-surface-container rounded-lg">
+          Riwayat
         </a>
-        <a href="#buku-servis" data-nav-tab="buku-servis" class="px-space-md py-space-sm transition-colors text-on-surface-variant font-label-lg hover:text-on-surface">
-          Buku Servis PDF
+        <a href="#buku-servis" data-nav-tab="buku-servis" class="px-3.5 py-1.5 transition-colors text-on-surface-variant font-label-md text-label-md hover:text-on-surface hover:bg-surface-container rounded-lg">
+          Buku Servis
         </a>
-        <a href="#admin" id="nav-item-admin" data-nav-tab="admin" class="hidden px-space-md py-space-sm transition-colors text-on-surface-variant font-label-lg hover:text-on-surface">
-          Data Master
+        <a href="#daftar-motor" data-nav-tab="daftar-motor" class="px-3.5 py-1.5 transition-colors text-on-surface-variant font-label-md text-label-md hover:text-on-surface hover:bg-surface-container rounded-lg">
+          Motor Saya
+        </a>
+        <a href="#admin" id="nav-item-admin" data-nav-tab="admin" class="hidden px-3.5 py-1.5 transition-colors text-on-surface-variant font-label-md text-label-md hover:text-on-surface hover:bg-surface-container rounded-lg">
+          Admin
         </a>
       </nav>
 
-      <!-- Quick Odometer Live Widget & User Account Switcher -->
-      <div class="flex items-center gap-space-sm sm:gap-space-md">
+      <!-- Quick Actions: Odometer & User Profile -->
+      <div class="flex items-center gap-2 sm:gap-3">
         
-        <!-- Live Odometer Button (FR-020, BR-014) -->
-        <button onclick="App.openOdoModal()" class="flex items-center gap-space-xs bg-surface-container-lowest hover:bg-surface-container-high text-on-surface px-space-sm sm:px-space-md py-space-sm rounded-lg shadow-[0_1px_3px_rgba(30,37,43,0.05)] border border-[#e4beba]/40 transition-all" title="Perbarui Odometer Motor" type="button">
-          <span class="material-symbols-outlined text-primary text-title-lg">Odometer</span>
-          <span class="font-label-md text-label-md font-mono font-bold" id="header-active-odometer">11.200 km</span>
-          <span class="material-symbols-outlined text-on-surface-variant text-label-sm">edit</span>
+        <!-- Live Odometer Button -->
+        <button onclick="App.openOdoModal()" class="flex items-center gap-1.5 bg-surface-container-lowest hover:bg-surface-container text-on-surface px-3 py-1.5 rounded-lg border border-surface-container-high/80 shadow-xs transition-all cursor-pointer" title="Perbarui Odometer Motor" type="button">
+          <span class="material-symbols-outlined text-primary text-[18px]">speed</span>
+          <span class="font-label-md text-xs font-mono font-bold" id="header-active-odometer">11.200 km</span>
         </button>
 
-        <!-- User Profile Chip (With One-Click Role/Account Switcher) -->
-        <div onclick="App.openUserSwitcher()" class="flex items-center gap-space-sm bg-surface-container-lowest p-space-xs pr-space-md rounded-full shadow-[0_1px_3px_rgba(30,37,43,0.05)] border border-[#e4beba]/40 cursor-pointer hover:bg-surface-container-high transition-all" title="Ganti Akun Demo / Hak Akses">
-          <div class="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
-            <span class="material-symbols-outlined text-lg">person</span>
+        <!-- User Profile Avatar Pill -->
+        <div onclick="App.openUserSwitcher()" class="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full bg-surface-container-lowest hover:bg-surface-container border border-[#e4beba]/40 shadow-xs cursor-pointer transition-all" title="Ganti Akun Demo / Hak Akses">
+          <div class="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs user-avatar-letter">
+            D
           </div>
-          <div class="hidden md:flex flex-col text-left">
-            <span class="font-label-md text-label-md text-on-surface leading-tight user-display-name">Dimas P.</span>
-            <span class="user-role-badge font-label-sm text-label-sm text-secondary bg-secondary-container/30 px-space-xs rounded font-semibold">Commuter Pro</span>
-          </div>
-          <span class="material-symbols-outlined text-on-surface-variant text-sm">swap_horiz</span>
+          <span class="font-medium text-xs text-on-surface user-display-name">Dimas P.</span>
+          <span class="material-symbols-outlined text-on-surface-variant text-[16px]">expand_more</span>
         </div>
 
       </div>
@@ -203,7 +189,7 @@
   </header>
 
   <!-- Mobile Bottom Navigation Bar -->
-  <nav class="xl:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur-md border-t border-surface-container-high shadow-lg px-2 py-2 flex justify-around items-center">
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur-md border-t border-surface-container-high shadow-lg px-2 py-2 flex justify-around items-center">
     <a href="#dashboard" class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary p-1">
       <span class="material-symbols-outlined text-2xl">speed</span>
       <span class="text-[10px] font-bold">Dashboard</span>
@@ -221,7 +207,7 @@
       <span class="text-[10px] font-bold">Buku PDF</span>
     </a>
     <a href="#daftar-motor" class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary p-1">
-      <span class="material-symbols-outlined text-2xl">Motor</span>
+      <span class="material-symbols-outlined text-2xl">two_wheeler</span>
       <span class="text-[10px] font-bold">Motor</span>
     </a>
   </nav>
@@ -229,7 +215,7 @@
   <!-- ======================================================== -->
   <!-- MAIN ROUTE CONTAINER -->
   <!-- ======================================================== -->
-  <main class="w-full pt-20 pb-20 xl:pb-12 bg-surface min-h-[calc(100vh-160px)] flex-1">
+  <main class="w-full pt-16 pb-20 md:pb-12 bg-surface min-h-[calc(100vh-140px)] flex-1">
     
     <!-- ====================================================== -->
     <!-- VIEW 1: DASHBOARD SERVIS (UC-03, UC-04, FR-020 - FR-025) -->

@@ -88,12 +88,12 @@ const App = {
 
     // Toggle header nav links
     document.querySelectorAll('[data-nav-tab]').forEach(el => {
-      const activeClass = "bg-primary-container text-on-primary-container font-label-lg rounded-lg";
-      const inactiveClass = "text-on-surface-variant font-label-lg hover:text-on-surface";
+      const activeClass = "bg-primary text-white font-semibold font-label-md text-label-md rounded-lg shadow-xs";
+      const inactiveClass = "text-on-surface-variant font-label-md text-label-md hover:text-on-surface hover:bg-surface-container rounded-lg";
       if (el.getAttribute('data-nav-tab') === tabId) {
-        el.className = `px-space-md py-space-sm transition-colors ${activeClass}`;
+        el.className = `px-3.5 py-1.5 transition-colors ${activeClass}`;
       } else {
-        el.className = `px-space-md py-space-sm transition-colors ${inactiveClass}`;
+        el.className = `px-3.5 py-1.5 transition-colors ${inactiveClass}`;
       }
     });
 
@@ -127,15 +127,20 @@ const App = {
     if (!u) return;
 
     const nameEls = document.querySelectorAll('.user-display-name');
-    nameEls.forEach(el => el.textContent = u.nama);
+    nameEls.forEach(el => el.textContent = u.nama ? u.nama.split(' ')[0] : 'User');
+
+    const avatarLetters = document.querySelectorAll('.user-avatar-letter');
+    avatarLetters.forEach(el => {
+      el.textContent = u.nama ? u.nama.charAt(0).toUpperCase() : 'U';
+    });
 
     const roleBadgeEls = document.querySelectorAll('.user-role-badge');
     roleBadgeEls.forEach(el => {
       if (u.role === 'admin') {
-        el.textContent = 'Administrator';
+        el.textContent = 'Admin';
         el.className = 'font-label-sm text-label-sm text-primary bg-primary-fixed px-space-xs rounded font-semibold user-role-badge';
       } else {
-        el.textContent = 'Commuter Pro';
+        el.textContent = 'User';
         el.className = 'font-label-sm text-label-sm text-secondary bg-secondary-container/30 px-space-xs rounded font-semibold user-role-badge';
       }
     });
@@ -197,19 +202,7 @@ const App = {
     const comps = this.state.components;
     const sum = this.state.summary;
 
-    // 1. Update Header Bike Pill
-    const headerBike = document.getElementById('header-active-bike');
-    if (headerBike && m) {
-      headerBike.innerHTML = `
-        <span class="material-symbols-outlined text-primary text-title-lg">two_wheeler</span>
-        <div class="flex flex-col text-left">
-          <span class="font-title-md text-title-md leading-tight text-on-surface">${m.merek} ${m.tipe}</span>
-          <span class="font-label-sm text-label-sm text-on-surface-variant font-mono">${m.nomor_polisi || '-'}</span>
-        </div>
-      `;
-    }
-
-    // 2. Update Header Odometer Pill
+    // 1. Update Header Odometer Pill
     const headerOdo = document.getElementById('header-active-odometer');
     if (headerOdo && m) {
       headerOdo.textContent = `${Number(m.odometer_saat_ini).toLocaleString('id-ID')} km`;
