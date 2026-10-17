@@ -1,9 +1,9 @@
 <?php
-// MotoCare Digital - View: Buku Servis Digital PDF (UC-06, FR-050 - FR-053)
+
 ?>
 
     <!-- ====================================================== -->
-    <!-- VIEW 4: BUKU SERVIS DIGITAL PDF (UC-06, FR-050 - FR-053) -->
+    <!-- VIEW 4: BUKU SERVIS DIGITAL PDF                        -->
     <!-- ====================================================== -->
     <section id="view-buku-servis" class="tab-content w-full">
       
@@ -12,7 +12,7 @@
         <div class="max-w-[1320px] mx-auto px-margin md:px-margin-md lg:px-margin-lg flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
           <div class="flex flex-col">
             <div class="flex items-center gap-space-xs text-on-surface-variant font-label-sm text-label-sm uppercase tracking-widest">
-              <span class="material-symbols-outlined text-primary text-title-md">verified</span>
+              <span class="inline-block w-2 h-2 rounded-full bg-secondary"></span>
               <span>Buku Servis Elektronik • Modul Ekspor Resmi</span>
             </div>
             <h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight mt-space-xs">
@@ -23,15 +23,11 @@
             </p>
           </div>
 
-          <!-- Action Buttons -->
+          <!-- Action Buttons (Single Consolidated Action) -->
           <div class="flex flex-wrap items-center gap-space-sm pt-space-xs lg:pt-0">
-            <button onclick="App.downloadPdf()" class="flex items-center gap-space-xs bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg px-space-md py-space-sm rounded-lg shadow-sm transition-all active:translate-y-0.5" type="button">
-              <span class="material-symbols-outlined text-title-lg">download</span>
-              <span>Unduh PDF (.pdf)</span>
-            </button>
-            <button onclick="window.print()" class="flex items-center gap-space-xs bg-surface-container-lowest text-on-surface hover:bg-surface-container-high font-label-lg text-label-lg px-space-md py-space-sm rounded-lg shadow-sm border border-[#e4beba]/40 transition-all" type="button">
-              <span class="material-symbols-outlined text-title-lg text-on-surface-variant">print</span>
-              <span>Cetak Dokumen</span>
+            <button onclick="App.downloadPdf()" class="flex items-center gap-space-xs bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg px-space-md py-space-sm rounded-lg shadow-sm transition-all active:translate-y-0.5 cursor-pointer" type="button">
+              <span class="material-symbols-outlined text-xl">picture_as_pdf</span>
+              <span>Unduh Buku Servis PDF</span>
             </button>
             <div class="hidden sm:flex items-center pl-space-xs">
               <span id="pdf-doc-id" class="bg-secondary-container/50 text-on-secondary-container font-label-sm text-label-sm px-space-sm py-1 rounded-full flex items-center gap-1 font-mono">

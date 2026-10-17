@@ -74,9 +74,9 @@
                   <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">error</span>
                 </div>
                 <div>
-                  <div class="font-headline-md text-headline-md font-mono text-on-surface leading-none" id="kpi-merah-count">1</div>
+                  <div class="font-headline-md text-headline-md font-mono text-on-surface leading-none" id="kpi-merah-count">0</div>
                   <div class="font-label-md text-label-md text-error font-semibold mt-1">Waktunya Ganti (Merah)</div>
-                  <div class="font-body-sm text-body-sm text-on-surface-variant">Sisa km ≤ 0 atau sisa hari ≤ 0</div>
+                  <div class="font-body-sm text-body-sm text-on-surface-variant" id="kpi-merah-subtitle">Sisa km ≤ 0 atau sisa hari ≤ 0</div>
                 </div>
               </div>
               <span class="material-symbols-outlined text-error/20 text-4xl">warning</span>
@@ -90,9 +90,9 @@
                   <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">report_problem</span>
                 </div>
                 <div>
-                  <div class="font-headline-md text-headline-md font-mono text-on-surface leading-none" id="kpi-kuning-count">1</div>
+                  <div class="font-headline-md text-headline-md font-mono text-on-surface leading-none" id="kpi-kuning-count">0</div>
                   <div class="font-label-md text-label-md text-tertiary font-semibold mt-1">Perlu Perhatian (Kuning)</div>
-                  <div class="font-body-sm text-body-sm text-on-surface-variant">&lt; 500 km atau &lt; 7 hari tersisa</div>
+                  <div class="font-body-sm text-body-sm text-on-surface-variant" id="kpi-kuning-subtitle">&lt; 500 km atau &lt; 7 hari tersisa</div>
                 </div>
               </div>
               <span class="material-symbols-outlined text-tertiary/20 text-4xl">schedule</span>
@@ -106,9 +106,9 @@
                   <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>
                 </div>
                 <div>
-                  <div class="font-headline-md text-headline-md font-mono text-on-surface leading-none" id="kpi-hijau-count">4</div>
+                  <div class="font-headline-md text-headline-md font-mono text-on-surface leading-none" id="kpi-hijau-count">0</div>
                   <div class="font-label-md text-label-md text-secondary font-semibold mt-1">Kondisi Baik (Hijau)</div>
-                  <div class="font-body-sm text-body-sm text-on-surface-variant">Jarak tempuh &amp; waktu aman</div>
+                  <div class="font-body-sm text-body-sm text-on-surface-variant" id="kpi-hijau-subtitle">Jarak tempuh &amp; waktu aman</div>
                 </div>
               </div>
               <span class="material-symbols-outlined text-secondary/20 text-4xl">task_alt</span>
@@ -142,22 +142,22 @@
           <div class="flex items-center gap-2 pt-3 overflow-x-auto pb-1">
             <button onclick="App.filterComponentCards('all')" data-filter="all" class="filter-pill active px-4 py-1.5 rounded-full flex items-center gap-1.5 cursor-pointer">
               <span>Semua Komponen</span>
-              <span class="px-1.5 py-0.2 rounded-full bg-white/20 text-xs font-mono" id="filter-count-all">6</span>
+              <span class="px-1.5 py-0.2 rounded-full bg-white/20 text-xs font-mono" id="filter-count-all">0</span>
             </button>
             <button onclick="App.filterComponentCards('merah')" data-filter="merah" class="filter-pill px-4 py-1.5 rounded-full flex items-center gap-1.5 cursor-pointer">
               <span class="w-2 h-2 rounded-full bg-primary inline-block"></span>
               <span>Waktunya Ganti</span>
-              <span class="px-1.5 py-0.2 rounded-full bg-error-container text-on-error-container text-xs font-mono font-bold" id="filter-count-merah">1</span>
+              <span class="px-1.5 py-0.2 rounded-full bg-error-container text-on-error-container text-xs font-mono font-bold" id="filter-count-merah">0</span>
             </button>
             <button onclick="App.filterComponentCards('kuning')" data-filter="kuning" class="filter-pill px-4 py-1.5 rounded-full flex items-center gap-1.5 cursor-pointer">
               <span class="w-2 h-2 rounded-full bg-tertiary inline-block"></span>
               <span>Perlu Perhatian</span>
-              <span class="px-1.5 py-0.2 rounded-full bg-tertiary-fixed text-on-tertiary-fixed text-xs font-mono font-bold" id="filter-count-kuning">1</span>
+              <span class="px-1.5 py-0.2 rounded-full bg-tertiary-fixed text-on-tertiary-fixed text-xs font-mono font-bold" id="filter-count-kuning">0</span>
             </button>
             <button onclick="App.filterComponentCards('hijau')" data-filter="hijau" class="filter-pill px-4 py-1.5 rounded-full flex items-center gap-1.5 cursor-pointer">
               <span class="w-2 h-2 rounded-full bg-secondary inline-block"></span>
               <span>Kondisi Baik</span>
-              <span class="px-1.5 py-0.2 rounded-full bg-secondary-container/60 text-on-secondary-container text-xs font-mono font-bold" id="filter-count-hijau">4</span>
+              <span class="px-1.5 py-0.2 rounded-full bg-secondary-container/60 text-on-secondary-container text-xs font-mono font-bold" id="filter-count-hijau">0</span>
             </button>
           </div>
         </div>

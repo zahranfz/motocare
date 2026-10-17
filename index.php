@@ -39,20 +39,10 @@ if (isset($_GET['action']) || isset($_GET['api'])) {
     exit;
 }
 
-// 2. DETEKSI BASE URI DAN REDIRECT KE CLEAN URL
+// 2. DETEKSI BASE URI
 $scriptName = $_SERVER['SCRIPT_NAME'] ?? '/index.php';
 $baseUri = rtrim(dirname($scriptName), '/\\') . '/';
 if ($baseUri === '//') $baseUri = '/';
-
-// Jika pengguna mengakses langsung ke /motocare/ atau /motocare/index.php tanpa query string,
-// redirect langsung ke clean URL /motocare/dashboard
-$requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
-if (!isset($_GET['page']) && !isset($_GET['action']) && !isset($_GET['api']) && !isset($_GET['partial']) && !isset($_GET['view_only']) && !isset($_GET['ajax'])) {
-    if ($requestPath === $baseUri || $requestPath === $baseUri . 'index.php') {
-        header("Location: " . $baseUri . "dashboard", true, 302);
-        exit;
-    }
-}
 
 // 3. DAFTAR VIEW DAN PARTIAL TERSEDIA
 $views = [

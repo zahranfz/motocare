@@ -81,9 +81,10 @@
         </button>
 
         <!-- PWA Install Button -->
-        <button id="btn-pwa-install" onclick="App.installPWA()" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20 text-xs font-bold hover:bg-primary/20 transition-all shadow-xs cursor-pointer" title="Pasang MotoCare ke Layar Utama HP / Desktop" type="button">
+        <button id="btn-pwa-install" onclick="App.installPWA()" class="flex shrink-0 items-center gap-1.5 px-2.5 xl:px-3 py-1.5 rounded-lg bg-primary/10 text-primary border border-primary/25 text-xs font-bold hover:bg-primary hover:text-white transition-all shadow-xs cursor-pointer" title="Pasang MotoCare ke Layar Utama HP / Desktop" type="button">
           <span class="material-symbols-outlined text-[18px]">install_mobile</span>
-          <span class="hidden lg:inline">Install App</span>
+          <span class="hidden sm:inline">Install App</span>
+          <span class="sm:hidden">Install</span>
         </button>
 
       </div>

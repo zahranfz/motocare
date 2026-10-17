@@ -11,10 +11,13 @@
 }
 
 /* Material Symbols icon styling guarantee */
-.material-symbols-outlined {
+.material-symbols-outlined,
+span.material-symbols-outlined,
+i.material-symbols-outlined,
+[class*="material-symbols"] {
   font-family: 'Material Symbols Outlined' !important;
-  font-weight: normal;
-  font-style: normal;
+  font-weight: normal !important;
+  font-style: normal !important;
   font-size: 24px;
   line-height: 1;
   letter-spacing: normal;
@@ -27,92 +30,93 @@
   -webkit-font-smoothing: antialiased;
 }
 
-/* Typography Tokens from DESIGN.md */
-.font-headline-xl, .text-headline-xl {
+/* Typography Family Tokens */
+.font-headline-xl, .font-headline-lg, .font-headline-md {
   font-family: 'Space Grotesk', sans-serif !important;
+}
+
+.font-telemetry-num {
+  font-family: 'Space Grotesk', monospace !important;
+}
+
+.font-title-lg, .font-title-md, .font-label-lg, .font-label-md, .font-label-sm, .font-body-lg, .font-body-md, .font-body-sm {
+  font-family: 'Hanken Grotesk', sans-serif !important;
+}
+
+/* Typography Size & Weight Tokens (Do not force font-family to avoid breaking icon fonts) */
+.text-headline-xl {
   font-size: 40px !important;
   line-height: 48px !important;
   letter-spacing: -0.02em !important;
   font-weight: 700 !important;
 }
 
-.font-headline-lg, .text-headline-lg {
-  font-family: 'Space Grotesk', sans-serif !important;
+.text-headline-lg {
   font-size: 32px !important;
   line-height: 40px !important;
   letter-spacing: -0.015em !important;
   font-weight: 600 !important;
 }
 
-.font-headline-md, .text-headline-md {
-  font-family: 'Space Grotesk', sans-serif !important;
+.text-headline-md {
   font-size: 22px !important;
   line-height: 28px !important;
   font-weight: 600 !important;
 }
 
-.font-title-lg, .text-title-lg {
-  font-family: 'Hanken Grotesk', sans-serif !important;
+.text-title-lg {
   font-size: 18px !important;
   line-height: 24px !important;
   font-weight: 600 !important;
 }
 
-.font-title-md, .text-title-md {
-  font-family: 'Hanken Grotesk', sans-serif !important;
+.text-title-md {
   font-size: 16px !important;
   line-height: 22px !important;
   font-weight: 600 !important;
 }
 
-.font-telemetry-num, .text-telemetry-num {
-  font-family: 'Space Grotesk', monospace !important;
+.text-telemetry-num {
   font-size: 28px !important;
   line-height: 32px !important;
   letter-spacing: -0.03em !important;
   font-weight: 700 !important;
 }
 
-.font-label-lg, .text-label-lg {
-  font-family: 'Hanken Grotesk', sans-serif !important;
+.text-label-lg {
   font-size: 14px !important;
   line-height: 18px !important;
   letter-spacing: 0.02em !important;
   font-weight: 600 !important;
 }
 
-.font-label-md, .text-label-md {
-  font-family: 'Hanken Grotesk', sans-serif !important;
+.text-label-md {
   font-size: 12px !important;
   line-height: 16px !important;
   letter-spacing: 0.04em !important;
   font-weight: 600 !important;
 }
 
-.font-label-sm, .text-label-sm {
-  font-family: 'Hanken Grotesk', sans-serif !important;
+.text-label-sm {
   font-size: 11px !important;
   line-height: 14px !important;
   letter-spacing: 0.06em !important;
   font-weight: 600 !important;
 }
 
-.font-body-lg, .text-body-lg {
-  font-family: 'Hanken Grotesk', sans-serif !important;
+.text-body-lg {
   font-size: 16px !important;
   line-height: 24px !important;
   font-weight: 400 !important;
 }
 
-.font-body-md, .text-body-md {
-  font-family: 'Hanken Grotesk', sans-serif !important;
+.text-body-md {
   font-size: 14px !important;
   line-height: 20px !important;
   font-weight: 400 !important;
 }
 
-.font-body-sm, .text-body-sm {
-  font-family: 'Hanken Grotesk', sans-serif !important;
+.text-body-sm {
   font-size: 12px !important;
   line-height: 16px !important;
   font-weight: 400 !important;

@@ -1,9 +1,8 @@
 <?php
-// MotoCare Digital - View: Riwayat Servis (UC-04, FR-034, FR-035, BR-016)
 ?>
 
     <!-- ====================================================== -->
-    <!-- VIEW 3: RIWAYAT SERVIS (UC-04, FR-034, FR-035, BR-016) -->
+    <!-- VIEW 3: RIWAYAT SERVIS                                 -->
     <!-- ====================================================== -->
     <section id="view-riwayat-servis" class="tab-content w-full">
       <div class="max-w-[1320px] mx-auto w-full px-margin md:px-margin-md lg:px-margin-lg py-space-lg flex flex-col gap-space-lg">
@@ -24,12 +23,12 @@
           </div>
           <div class="flex items-center flex-wrap gap-space-sm">
             <a href="buku-servis" data-nav-tab="buku-servis" class="flex items-center gap-space-xs px-space-md py-space-sm bg-surface-container-lowest text-on-surface hover:bg-surface-container-high transition-all rounded-lg shadow-sm font-label-lg text-label-lg border border-[#e4beba]/40">
-              <span class="material-symbols-outlined text-primary text-title-lg">picture_as_pdf</span>
+              <span class="material-symbols-outlined text-primary text-xl">picture_as_pdf</span>
               <span>Buku Servis PDF</span>
             </a>
-            <button onclick="App.openManualServiceModal()" class="flex items-center gap-space-xs px-space-lg py-space-sm bg-primary text-on-primary hover:bg-primary-container transition-all rounded-lg shadow-md font-label-lg text-label-lg" type="button">
-              <span class="material-symbols-outlined text-title-lg">add_circle</span>
-              <span>+ Catat Servis Manual</span>
+            <button onclick="App.openManualServiceModal()" class="flex items-center gap-space-xs px-space-lg py-space-sm bg-primary text-on-primary hover:bg-primary-container transition-all rounded-lg shadow-md font-label-lg text-label-lg cursor-pointer" type="button">
+              <span class="material-symbols-outlined text-xl">add_circle</span>
+              <span>Catat Servis Manual</span>
             </button>
           </div>
         </div>

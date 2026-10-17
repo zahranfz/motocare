@@ -1,148 +1,223 @@
-# MotoCare Digital 
-**Motorcycle Maintenance Tracker & Smart Assistant**
-*Karya Tim Hore — Hackathon Inovasi Digital 2026*
+# MotoCare Digital
+### Motorcycle Maintenance Tracker & Smart Assistant
+*Platform Pemantauan Perawatan Sepeda Motor Berbasis Telemetri Real-Time & Asisten Cerdas*  
+**Finalist Informatics Championship x Catalyst Hackathon 2026**
 
 ---
 
-## 📌 Ringkasan Eksekutif & Solusi
-
-**MotoCare Digital** adalah aplikasi web modern berbasis telemetri yang dirancang untuk mengatasi 4 masalah utama pemilik sepeda motor di Indonesia:
-1. **Lupa Jadwal Komponen:** Perhitungan otomatis sisa kilometer & hari dengan indikator visual **Hijau (Kondisi Baik)**, **Kuning (Perlu Perhatian)**, dan **Merah (Waktunya Ganti)**.
-2. **Literasi Komponen Rendah:** Rekomendasi kode suku cadang pabrikan OEM asli (AHM / YIMM / SGO) langsung pada kartu komponen.
-3. **Pencatatan Servis Manual:** Fitur *One-Click Reset* ("Sudah Diganti") otomatis menyetel ulang baseline dan mencatat riwayat pemeliharaan, serta menghasilkan **Buku Servis Digital PDF resmi**.
-4. **Sulit Menemukan Bengkel:** Pencari bengkel interaktif (Leaflet.js + OpenStreetMap) dengan pembeda tegas antara **Bengkel Resmi (AHASS / Yamaha)** dan **Bengkel Umum**, lengkap dengan rute GPS dan kontak.
-
-Desain antarmuka mengadopsi **Stitch Red & Beige Palette** (`#AF101A` Crimson Precision, `#016D38` Emerald Status, `#864700` Amber Advisory, dan `#FEF8F3` Sandstone Canvas) dengan tipografi **Space Grotesk** dan **Hanken Grotesk**.
+### 📑 Daftar Isi (Sesuai Standar SOP Hackathon):
+1. [Nama Tim dan Daftar Anggota](#1-nama-tim-dan-daftar-anggota)
+2. [Deskripsi Permasalahan](#2-deskripsi-permasalahan)
+3. [Solusi yang Dikembangkan](#3-solusi-yang-dikembangkan)
+4. [Teknologi yang Digunakan](#4-teknologi-yang-digunakan)
+5. [Petunjuk Instalasi dan Cara Menjalankan Aplikasi](#5-petunjuk-instalasi-dan-cara-menjalankan-aplikasi)
 
 ---
 
-## 🚀 Panduan Menjalankan Aplikasi
+## 1. Nama Tim dan Daftar Anggota
 
-Aplikasi dirancang **zero-configuration**: database SQLite terinisialisasi secara otomatis lengkap dengan data *seed*, sehingga langsung dapat digunakan tanpa repot impor database terlebih dahulu!
+* **Nama Tim:** Tim Hore
+* **Daftar Anggota:**
 
-### Opsi 1: Menjalankan dengan PHP Built-in Server (Rekomendasi Cepat)
-Buka terminal PowerShell pada direktori proyek:
-```powershell
-C:\xampp\php\php.exe -S 127.0.0.1:8000
+| No | Nama Lengkap | Akun GitHub | Email | Peran & Tanggung Jawab |
+|:---:|---|---|---|---|
+| **1** | **Zahran Febrian Nugraha** | [@zahranfz](https://github.com/zahranfz) | `zahranfebriannugraha@gmail.com` | **Lead Developer & Full-Stack Architect** (Sistem Telemetri Odometer, REST API, Database SQLite/MySQL, Integrasi PWA) |
+| **2** | **Bagas** | [@bagasrajin](https://github.com/bagasrajin) | `choplakgangster2425@gmail.com` | **Backend & Data Integration Engineer** (Logika Penggantian Komponen, Validasi Odometer, API Servis & Cost Tracker) |
+| **3** | **Fatur Rohman Cesar** | [@faturcesar](https://github.com/faturcesar) | `faturrohmancp@gmail.com` | **Frontend Developer & UI/UX Specialist** (Pemisahan Tampilan Modular, Desain Responsif Tailwind, Buku Servis Digital PDF) |
+| **4** | **Sofian Abdi Arrahman** | [@SofianProject](https://github.com/SofianProject) | `sofianabdiarrahman@gmail.com` | **Frontend & Mobile Experience Engineer** (Integrasi Peta Leaflet.js, WhatsApp Automation, PWA Service Worker & Pengujian) |
+
+---
+
+## 2. Deskripsi Permasalahan
+
+Sepeda motor merupakan moda transportasi utama bagi lebih dari 120 juta masyarakat Indonesia, mulai dari komuter harian, kurir logistik, hingga pengemudi ojek online. Kendati demikian, efisiensi dan keamanan berkendara sering kali terancam oleh berbagai permasalahan perawatan kendaraan:
+
+1. **Lupa Jadwal dan Keterlambatan Servis Komponen Kritis:**
+   * Pengendara umumnya hanya mengandalkan ingatan atau estimasi kasar untuk jadwal servis. Keterlambatan penggantian oli mesin atau oli transmisi (gardan) berujung pada kerusakan parah silinder/piston dan turun mesin berbiaya jutaan rupiah. Begitu pula ausnya kampas rem dan V-belt/rantai yang berisiko fatal terhadap keselamatan di jalan.
+2. **Rendahnya Literasi Standar Pabrikan & Keraguan Keaslian Suku Cadang (OEM):**
+   * Sebagian besar pemilik kendaraan tidak memahami kode suku cadang resmi pabrikan (seperti nomor part resmi AHM, YIMM, atau SGO) dan interval jarak/waktu servis yang dianjurkan buku manual. Akibatnya, pengguna rentan membeli komponen palsu (KW) atau mengganti suku cadang prematur karena rekomendasi bengkel nakal.
+3. **Pencatatan Servis Manual yang Tercecer, Hilang, dan Tanpa Transparansi Biaya:**
+   * Buku servis fisik bawaan diler rentan hilang, rusak, atau tertinggal di rumah. Pengguna kehilangan rekam jejak riwayat servis (*service log*), tidak memiliki pencatatan pengeluaran finansial perawatan kendaraan (*cost per km*), serta kehilangan bukti kredibel saat hendak menjual motor bekas sehingga nilai jual kembali (*resale value*) merosot drastis.
+4. **Kesulitan Menemukan dan Membedakan Bengkel Terdekat:**
+   * Saat motor mengalami kendala di perjalanan, pengendara kesulitan mencari bengkel di sekitar lokasinya, tidak dapat membedakan secara instan antara **Bengkel Resmi (AHASS/Yamaha)** dengan **Bengkel Umum/UMKM**, serta minim akses kontak langsung untuk reservasi tanpa antre.
+
+---
+
+## 3. Solusi yang Dikembangkan
+
+**MotoCare Digital** hadir sebagai solusi berbasis *smart assistant & progressive web telemetry* yang mengubah cara pemilik motor memantau, merawat, dan mengelola biaya kendaraan mereka secara otomatis, terukur, dan transparan.
+
+### A. Gambaran Solusi dan Cara Kerjanya
+
+1. **Pendaftaran Kendaraan & Garasi Multi-Motor (Multi-Motor Garage):**
+   * Pengguna dapat mendaftarkan sepeda motor dari katalog master pabrikan (Matic & Bebek) maupun motor kustom.
+   * **Snapshot Pattern (BR-009):** Saat motor didaftarkan, standar interval kilometer, interval bulan, dan rekomendasi kode suku cadang pabrikan disalin utuh ke profil motor aktif pengguna sehingga terlindungi dari manipulasi data master di kemudian hari.
+   * Mendukung lebih dari 1 motor dalam 1 akun dengan *quick-switch dropdown* aktif di navigasi atas.
+
+2. **Perhitungan Telemetri Real-Time & Sistem Triage Status (BR-001 – BR-007):**
+   * Setiap kali odometer diperbarui, sistem mengalkulasi status kesehatan setiap komponen secara otomatis:
+     $$\text{Sisa km} = \text{interval\_km} - (\text{odometer\_sekarang} - \text{odometer\_baseline})$$
+     $$\text{Sisa hari} = (\text{interval\_bulan} \times 30) - \text{selisih hari kalender (WIB)}$$
+   * **🔴 Merah (Waktunya Ganti):** `sisa_km <= 0` ATAU `sisa_hari <= 0` (Kondisi darurat, pemicu peringatan prioritas utama).
+   * **🟡 Kuning (Perlu Perhatian):** `0 < sisa_km < 500` ATAU `0 < sisa_hari < 7` (Tahap antisipasi persiapan servis).
+   * **🟢 Hijau (Kondisi Baik):** Komponen berada dalam ambang batas aman.
+   * **Prioritas Tampilan Cerdas (FR-023):** Kartu komponen diurutkan otomatis: **Merah → Kuning → Hijau**, lalu berdasarkan sisa km terkecil.
+
+3. **One-Click Maintenance Reset & Pembatalan 24 Jam (FR-030 – FR-035):**
+   * Fitur **"Sudah Diganti"** mencatat riwayat pemeliharaan secara atomik, menyetel ulang baseline kilometer/tanggal komponen, mencatat biaya servis, serta mengizinkan unggah foto struk/nota pembayaran.
+   * Dilengkapi pencegahan klik ganda (*Debounce* 10 detik, BR-011) serta mekanisme **Pembatalan Servis dalam 24 Jam** (BR-016) untuk mengoreksi kesalahan tanpa menghapus jejak audit log.
+
+4. **Buku Servis Digital & Ekspor PDF Resmi Berstandar A4 (FR-050 – FR-053):**
+   * Menghasilkan buku servis digital interaktif dengan identitas lengkap kendaraan (pemilik, nopol, odometer terkini) dan tabel riwayat pemeliharaan.
+   * **One-Click Export PDF:** Menggunakan `html2pdf.js` dengan styling cetak CSS presisi A4 serta mencantumkan klausul hukum resmi kepemilikan data (FR-053).
+
+5. **Pencari Bengkel Terdekat Interaktif (FR-040 – FR-045):**
+   * Peta berbasis **Leaflet.js** dan **OpenStreetMap** dengan radius dinamis (3 km, 5 km, 10 km).
+   * Pembeda visual tegas: Penanda Merah untuk **Bengkel Resmi (AHASS / Yamaha)** dan Hijau untuk **Bengkel Umum/UMKM**, lengkap dengan tombol navigasi rute Google Maps dan chat reservasi WhatsApp.
+
+6. **Integrasi Cerdas WhatsApp (Smart Reminder & Direct Booking):**
+   * **Kirim Pengingat ke WA:** Menghasilkan template pesan WhatsApp terstruktur yang merangkum komponen kritis (Merah/Kuning), rekomendasi kode part OEM, odometer motor, serta saran bengkel terdekat.
+   * **Direct Workshop Booking:** Menghubungkan pengguna langsung ke kontak mekanik bengkel dengan draf pemesanan jadwal servis otomatis.
+
+7. **Finansial Telemetri & Arsip Nota Digital (Cost Tracker):**
+   * Menghitung akumulasi total biaya perawatan, rata-rata biaya per servis, rasio biaya per kilometer (*Cost per km*), serta galeri struk digital tersimpan (`uploads/nota/`).
+
+8. **Progressive Web App (PWA) & Offline Resilience:**
+   * Aplikasi dapat dipasang langsung (*Install App / Add to Home Screen*) di perangkat Android, iOS, maupun Desktop via `manifest.json`.
+   * Layanan *Service Worker* (`sw.js`) dengan strategi caching pintar untuk memastikan akses riwayat dan navigasi tetap lancar meski di area minim sinyal.
+
+---
+
+## 4. Teknologi yang Digunakan
+
+Aplikasi MotoCare Digital dibangun dengan arsitektur modern berorientasi performa tinggi, efisiensi sumber daya, dan kemudahan deployment:
+
+### A. Bahasa Pemrograman & Backend
+* **PHP 8.x (Native):** Engine backend berbasis REST API terstruktur (`api/index.php`), tanpa framework berat sehingga eksekusi sangat cepat, latensi rendah, dan ramah sumber daya server.
+* **PDO (PHP Data Objects):** Abstraksi database aman dengan prepared statements untuk mencegah ancaman SQL Injection.
+* **JavaScript (ES6+ Native):** Logika antarmuka reaktif berbasis Single Page Architecture tanpa *virtual DOM overhead*, memanfaatkan modul terpisah (`assets/js/app.js`).
+* **HTML5 & Modern CSS3:** Markup semantik terstruktur dan styling presisi standar W3C.
+
+### B. Framework & Pustaka Frontend
+* **Tailwind CSS (v3 via CDN):** Desain sistem berbasis utilitas yang diintegrasikan dengan tema warna kustom **Stitch Red & Beige Palette** (`#AF101A` Crimson Precision, `#016D38` Emerald Status, `#864700` Amber Advisory, dan `#FEF8F3` Sandstone Canvas).
+* **Leaflet.js (v1.9.4):** Library peta interaktif open-source berbasis JavaScript untuk visualisasi lokasi bengkel dan geolokasi pengguna.
+* **OpenStreetMap (OSM) Tiles:** Penyedia layer peta global gratis tanpa batasan API key berbayar.
+* **html2pdf.js (v0.10.1):** Pustaka konversi dokumen HTML ke PDF secara instan di sisi klien (*client-side rendering*).
+* **Google Fonts (Space Grotesk & Hanken Grotesk):** Tipografi modern yang menjamin keterbacaan tinggi pada berbagai ukuran layar.
+* **Material Symbols Outlined:** Ikonografi Google standar untuk representasi aksi dan navigasi yang intuitif.
+
+### C. Database & Penyimpanan
+* **SQLite 3 (`data/motocare.db`):** Database lokal berkecepatan tinggi, nir-konfigurasi (*zero-configuration*), ter-seed otomatis saat inisialisasi aplikasi.
+* **MySQL / MariaDB (`database.sql`):** Skrip skema relasional lengkap (DDL & DML) untuk dukungan deployment skala enterprise.
+
+### D. Layanan Web & Fitur Platform
+* **W3C Web App Manifest (`manifest.json`) & Service Worker (`sw.js`):** Standar Progressive Web App (PWA) untuk instalasi native dan caching aset offline.
+* **HTML5 Geolocation API:** Deteksi koordinat GPS pengguna secara *real-time*.
+* **WhatsApp Click-to-Chat Protocol:** Integrasi komunikasi pesan pintar antar-pengguna dan pemilik bengkel.
+
+### E. Struktur Direktori Proyek
 ```
-Buka peramban (browser) di:
-👉 **`http://127.0.0.1:8000`**
-
-### Opsi 2: Menjalankan via XAMPP Apache
-1. Pastikan folder ini berada di: `c:\xampp\htdocs\motocare`
-2. Buka XAMPP Control Panel dan nyalakan **Apache**.
-3. Akses via browser di:
-👉 **`http://localhost/motocare`**
-
-*(Opsional untuk pengguna MySQL/phpMyAdmin)*: Skrip skema dan seed lengkap telah disediakan pada file [`database.sql`](file:///c:/xampp/htdocs/motocare/database.sql).
-
----
-
-## 👥 Akun Demo & Akses Cepat (1-Click Switcher)
-
-Untuk kenyamanan pengujian fitur dan penilaian dewan juri, telah disediakan tombol ganti akun instan pada pojok kanan atas (*User Chip*):
-
-| Akun | Email | Password | Peran (Role) | Keterangan Data |
-|---|---|---|---|---|
-| **Dimas Prasetyo** | `dimas@motocare.id` | `password123` | **Pengguna** | Honda Vario 160 (B 4821 KRO), 11.200 km (1 Merah, 1 Kuning, 4 Hijau) |
-| **Admin Tim Hore** | `admin@motocare.id` | `admin12345` | **Admin** | Akses Menu Pengelolaan Data Master (Motor & Suku Cadang) |
-| **Budi Santoso (Ojol)** | `budi@motocare.id` | `password123` | **Pengguna** | Akun pengguna komuter jarak tinggi |
-
----
-
-## 📋 Implementasi Functional Requirements (FR) Sesuai PRD
-
-### Modul A — Akun & Akses (FR-001 – FR-004)
-- Autentikasi sesi aman berbasis hash bcrypt (`password_hash`).
-- Isolasi data pengguna: Pengguna hanya dapat mengakses dan memodifikasi data sepeda motor miliknya sendiri (BR-018).
-- Role-based Access Control (RBAC): Endpoint data master dilindungi verifikasi `role === 'admin'`.
-
-### Modul B — Sepeda Motor & Komponen (FR-010 – FR-015)
-- Katalog bertingkat (Merek → Tipe) dari `master_motor`.
-- Pengguna dapat mendaftarkan motor yang belum tersedia di katalog secara privat, memilih kategori Matic atau Bebek, dan mendapatkan daftar komponen awal sesuai kategorinya. Interval motor custom adalah nilai umum tanpa kode part OEM; verifikasi dengan buku manual motor.
-- Kategori motor tersimpan di `master_motor.jenis_motor`; perubahan ini dimigrasikan otomatis untuk database SQLite maupun MySQL yang sudah ada.
-- Snapshot Pattern (BR-009): Saat motor didaftarkan, standar interval km, bulan, dan kode part disalin utuh ke `user_part_status` agar perubahan data master oleh admin di kemudian hari tidak merusak riwayat motor yang telah berjalan.
-- Dukungan penyesuaian titik awal penggantian komponen kustom saat pendaftaran (FR-013).
-- Pembatasan 1 motor aktif per akun untuk Fase 1 (FR-014).
-
-### Modul C — Odometer & Status Komponen (FR-020 – FR-025)
-- Perhitungan real-time setiap kali halaman dimuat (BR-007):
-  - `Sisa km = interval_km - (odometer_sekarang - odometer_baseline)` (BR-001, mendukung nilai minus/terlambat)
-  - `Sisa hari = (interval_bulan * 30) - selisih hari kalender WIB` (BR-002)
-  - **Merah:** `sisa_km <= 0` ATAU `sisa_hari <= 0` (BR-003)
-  - **Kuning:** `0 < sisa_km < 500` ATAU `0 < sisa_hari < 7` (BR-004)
-  - **Hijau:** Di luar kondisi Merah dan Kuning (BR-005)
-- Pengurutan prioritas otomatis: **Merah → Kuning → Hijau**, lalu berdasarkan sisa km terkecil (FR-023).
-- Validasi Odometer (BR-014): Nilai tidak boleh lebih kecil dari odometer tercatat, dan lonjakan > 5.000 km memicu dialog konfirmasi keamanan.
-
-### Modul D — Penggantian Komponen & Riwayat (FR-030 – FR-035)
-- **One-Click Reset ("Sudah Diganti"):** Dialog konfirmasi dengan input odometer dan tanggal, secara atomik mereset baseline komponen dan mencatat riwayat servis (FR-031, FR-032).
-- Pencegahan klik ganda (Debounce 10 detik per komponen, BR-011).
-- **Pembatalan Penggantian (FR-035 / BR-016):** Penggantian terakhir suatu komponen dapat dibatalkan dalam waktu 24 jam; baseline dikembalikan ke titik sebelum servis dan baris riwayat ditandai `Dibatalkan` (tidak dihapus).
-
-### Modul E — Pencari Bengkel Terdekat (FR-040 – FR-045)
-- Peta interaktif Leaflet.js dengan penanda (marker) merah untuk **Bengkel Resmi (AHASS / Yamaha)** dan hijau untuk **Bengkel Umum & UMKM**.
-- Pilihan radius pencarian: 3 km, 5 km (default), dan 10 km (BR-012).
-- Dukungan Geolocation peramban + pemilihan titik manual di peta (FR-045).
-- Tautan langsung rute navigasi Google Maps untuk setiap bengkel.
-
-### Modul F — Buku Servis Digital PDF (FR-050 – FR-053)
-- Ekspor PDF resmi berstandar A4 menggunakan pustaka `html2pdf.js` dan dukungan cetak browser (`window.print`).
-- Memuat identitas lengkap pemilik, nomor polisi, spesifikasi motor, odometer ekspor, dan tabel riwayat kronologis.
-- Mencantumkan klausul hukum wajib sesuai **FR-053 & R8**: *"Data dicatat secara mandiri oleh pemilik kendaraan dan tidak diverifikasi langsung oleh pihak bengkel resmi"*.
-
-### Modul G — Administrasi Data Master (FR-060 – FR-063)
-- CRUD Tipe Motor (`master_motor`) & Standar Komponen (`master_part`).
-- Mekanisme Soft-Deactivate / Nonaktifkan (FR-062) untuk menjaga integritas data yang telah digunakan pengguna.
-
----
-
-## ⚡ Fitur Unggulan Tambahan (Quick Wins & Smart Integrations)
-
-### 1. Garasi Multi-Motor (Multi-Motor Garage Switcher)
-- Pengguna dapat mendaftarkan **lebih dari 1 sepeda motor** ke dalam garasi akun yang sama.
-- Dropdown interaktif di navbar atas memungkinkan beralih konteks motor aktif secara instan pada dasbor, buku riwayat servis, maupun ekspor PDF.
-
-### 2. Pencatatan Biaya & Cost Tracker (Telemetry Finansial)
-- Strip metrik 4-kartu pada halaman Riwayat Servis yang menghitung:
-  - **Total Biaya Servis:** Akumulasi pengeluaran perawatan aktif.
-  - **Rata-rata per Servis:** Biaya rata-rata setiap kali berkunjung ke bengkel.
-  - **Cost per km:** Rasio biaya servis terhadap total jarak tempuh odometer (Rp/km).
-  - **Bukti Nota & Struk:** Jumlah transaksi yang memiliki lampiran digital.
-
-### 3. Lampiran Foto Nota Servis (Digital Receipt Scanner)
-- Opsi melampirkan foto struk/nota pembayaran baik saat konfirmasi penggantian komponen maupun pencatatan servis manual.
-- File disimpan aman di server lokal (`uploads/nota/`) dengan pratinjau thumbnail di tabel riwayat serta modal pop-up untuk melihat gambar resolusi penuh dan mengunduh berkas.
-
-### 4. Integrasi WhatsApp (Smart WA Reminder & Direct Workshop Booking)
-- **Kirim Pengingat ke WhatsApp:** Tombol di dasbor untuk membuat pesan WhatsApp siap kirim yang terstruktur rapi memuat ringkasan komponen berstatus Merah/Kuning, odometer, rekomendasi kode part, serta bengkel terdekat.
-- **Booking / Chat Bengkel via WA:** Tombol chat langsung pada setiap kartu bengkel dan popup peta dengan template permohonan reservasi slot mekanik otomatis.
-
-### 5. Progressive Web App (PWA) & Offline Support
-- **Web App Manifest (`manifest.json`):** Aplikasi dapat dipasang langsung (*Add to Home Screen / Install App*) di Android, iOS, maupun desktop seperti aplikasi native.
-- **Service Worker (`sw.js`):** Pre-caching aset inti dan penanganan offline cerdas (*Network-first* untuk API dengan fallback ke cache saat sinyal minim).
-
----
-
-## 📂 Struktur Direktori Proyek
-
-```
-c:\xampp\htdocs\motocare\
+motocare/
 ├── api/
-│   ├── db.php                     # Koneksi database PDO (SQLite otomatis / MySQL fallback)
+│   ├── db.php                     # Koneksi database PDO (Auto SQLite & fallback MySQL)
 │   └── index.php                  # Router REST API & Controller bisnis lengkap
 ├── assets/
 │   ├── css/
-│   │   └── custom.css             # Gaya kustom, pulse indicator, styling A4 print
+│   │   └── custom.css             # Desain custom, pulse status, styling cetak A4
+│   ├── icons/                     # Aset ikon PWA (icon-192.png, icon-512.png)
 │   └── js/
-│       └── app.js                 # Logika front-end reaktif, Leaflet map, html2pdf
+│       └── app.js                 # Front-end state reaktif, Leaflet map, html2pdf
 ├── data/
-│   └── motocare.db                # Database SQLite lokal terisolasi & ter-seed
-├── database.sql                   # Skrip DDL & DML untuk MySQL / phpMyAdmin
-├── index.php                      # Single-page Application utama terpadu
-└── README.md                      # Dokumentasi teknis & panduan instalasi
+│   └── motocare.db                # Database SQLite terisi data seed (Auto-generated)
+├── partials/                      # Komponen antarmuka modular (header, navbar, modals)
+│   ├── header.php
+│   ├── modals.php
+│   └── navbar.php
+├── views/                         # Halaman antarmuka aplikasi
+│   ├── admin.php                  # Panel Admin Master Motor & Suku Cadang
+│   ├── bengkel.php                # Pencari Bengkel Interaktif & Navigasi
+│   ├── buku-servis.php            # Buku Servis Digital & Ekspor PDF
+│   ├── dashboard.php              # Dasbor Telemetri Komponen & Odometer
+│   └── riwayat.php                # Riwayat Servis, Cost Tracker & Struk Nota
+├── database.sql                   # Skrip DDL/DML untuk pengguna MySQL / phpMyAdmin
+├── index.php                      # File utama entry point Single Page Application
+├── manifest.json                  # Konfigurasi PWA Web App Manifest
+├── sw.js                          # Service Worker PWA (Offline cache & sync)
+└── README.md                      # Dokumentasi resmi proyek
 ```
 
 ---
 
-*MotoCare Digital — Dikembangkan oleh Tim Hore untuk Hackathon Inovasi Mobilitas Cerdas 2026.*
+## 5. Petunjuk Instalasi dan Cara Menjalankan Aplikasi
+
+Aplikasi dirancang dengan prinsip **Zero Configuration**. Database lokal SQLite terinisialisasi secara otomatis lengkap dengan data awal (*seed*), sehingga aplikasi dapat langsung diuji tanpa langkah rumit.
+
+### A. Prasyarat Sistem (Prerequisites)
+Pastikan komputer Anda telah terpasang:
+* **Git** ([Download Git](https://git-scm.com/))
+* **PHP 8.0 atau lebih baru** (Ekstensi `pdo_sqlite` aktif secara bawaan pada PHP standar)
+* Peramban Web Modern (*Google Chrome, Microsoft Edge, Brave, atau Mozilla Firefox*)
+* *(Opsional)* **XAMPP / Laragon** jika ingin menjalankan via Apache web server
+
+---
+
+### B. Langkah 1: Clone Repository GitHub
+Buka terminal (Command Prompt / PowerShell / Git Bash), lalu jalankan:
+```bash
+git clone https://github.com/zahranfz/motocare.git
+cd motocare
+```
+
+---
+
+### C. Langkah 2: Menjalankan Aplikasi
+
+Pilih salah satu dari 2 metode mudah berikut:
+
+#### Opsi 1 — Menggunakan PHP Built-in Server (Rekomendasi Cepat & Paling Mudah)
+Jalankan server bawaan PHP langsung dari dalam direktori proyek:
+```bash
+php -S 127.0.0.1:8000
+```
+*(Bagi pengguna Windows dengan XAMPP terinstal, jika `php` belum masuk System PATH, gunakan perintah):*
+```powershell
+C:\xampp\php\php.exe -S 127.0.0.1:8000
+```
+Setelah server berjalan, buka browser dan kunjungi:  
+👉 **`http://127.0.0.1:8000`**
+
+---
+
+#### Opsi 2 — Menggunakan Apache pada XAMPP
+1. Pastikan folder repository berada di direktori `htdocs`:
+   ```
+   C:\xampp\htdocs\motocare
+   ```
+2. Buka aplikasi **XAMPP Control Panel** dan klik **Start** pada modul **Apache**.
+3. Buka browser dan akses tautan:  
+   👉 **`http://localhost/motocare`**
+
+---
+
+### D. Langkah 3: Akun Demo & Akses Pengujian Cepat (1-Click Switcher)
+
+Untuk kenyamanan pengujian fitur oleh dewan juri, telah disediakan tombol ganti akun instan pada pojok kanan atas layar (*User Chip*):
+
+| Akun / Profil | Email | Password | Role / Hak Akses | Skenario Data Pengujian |
+|---|---|---|:---:|---|
+| **Dimas Prasetyo** | `dimas@motocare.id` | `password123` | **Pengguna** | Honda Vario 160 (B 4821 KRO), 11.200 km.<br>Memiliki **1 Komponen Merah** (Oli Mesin), **1 Kuning** (Busi), dan **4 Hijau**. Ideal untuk uji triage telemetri, reset penggantian, ekspor PDF, dan kirim pengingat WhatsApp. |
+| **Admin Tim Hore** | `admin@motocare.id` | `admin12345` | **Admin** | Memiliki akses ke menu navigasi **Admin Panel** untuk menambah/mengedit master motor dan katalog standar komponen suku cadang pabrikan. |
+| **Budi Santoso (Ojol)** | `budi@motocare.id` | `password123` | **Pengguna** | Profil pengguna komuter jarak jauh / pengemudi ojol. Ideal untuk pengujian pendaftaran motor baru dan pencatatan servis. |
+
+---
+
+### E. Langkah 4: Opsi Database MySQL / phpMyAdmin (Opsional)
+Secara bawaan, aplikasi langsung menggunakan SQLite di `data/motocare.db` tanpa perlu konfigurasi tambahan. Namun, jika dewan juri ingin menguji dengan database MySQL:
+1. Buka **phpMyAdmin** (`http://localhost/phpmyadmin`).
+2. Buat database baru dengan nama `motocare`.
+3. Impor berkas [`database.sql`](database.sql) ke dalam database tersebut.
+4. Buka [`api/db.php`](api/db.php) dan sesuaikan kredensial koneksi MySQL (default: `root` tanpa password).
+
+---
+
+*MotoCare Digital — Dikembangkan dengan bangga oleh Tim Hore pada Final Informatics Championship x Catalyst Hackathon 2026.*

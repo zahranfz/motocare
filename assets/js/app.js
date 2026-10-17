@@ -62,15 +62,17 @@ const App = {
       this.state.deferredInstallPrompt = e;
       const installBtn = document.getElementById('btn-pwa-install');
       if (installBtn) {
-        installBtn.classList.remove('hidden');
-        installBtn.classList.add('flex');
+        installBtn.classList.remove('opacity-75');
       }
     });
 
     window.addEventListener('appinstalled', () => {
       this.state.deferredInstallPrompt = null;
       const installBtn = document.getElementById('btn-pwa-install');
-      if (installBtn) installBtn.classList.add('hidden');
+      if (installBtn) {
+        installBtn.classList.add('opacity-75');
+        installBtn.title = 'MotoCare Digital sudah terpasang di perangkat Anda';
+      }
       this.showToast('MotoCare Digital berhasil dipasang di perangkat Anda!', 'check_circle');
     });
 
@@ -345,32 +347,91 @@ const App = {
   },
 
   renderEmptyBikeState() {
+    // 1. Update Header Bike Name, Odometer, and Garage Dropdown
+    const headerBikeName = document.getElementById('header-active-bike-name');
+    if (headerBikeName) {
+      headerBikeName.textContent = 'Belum Ada Motor';
+    }
+    const headerOdo = document.getElementById('header-active-odometer');
+    if (headerOdo) {
+      headerOdo.textContent = '- km';
+    }
+    this.renderGarageDropdown();
+
+    // 2. Reset Status Triage KPI Banner counts & subtitles to 0
+    const kpiMerah = document.getElementById('kpi-merah-count');
+    const kpiKuning = document.getElementById('kpi-kuning-count');
+    const kpiHijau = document.getElementById('kpi-hijau-count');
+    if (kpiMerah) kpiMerah.textContent = '0';
+    if (kpiKuning) kpiKuning.textContent = '0';
+    if (kpiHijau) kpiHijau.textContent = '0';
+
+    const subMerah = document.getElementById('kpi-merah-subtitle');
+    const subKuning = document.getElementById('kpi-kuning-subtitle');
+    const subHijau = document.getElementById('kpi-hijau-subtitle');
+    if (subMerah) subMerah.textContent = '0 Komponen (Belum ada motor)';
+    if (subKuning) subKuning.textContent = '0 Komponen (Belum ada motor)';
+    if (subHijau) subHijau.textContent = '0 Komponen (Belum ada motor)';
+
+    // Remove active filter highlight border from KPI cards
+    document.querySelectorAll('.kpi-card').forEach(card => {
+      card.classList.remove('active-filter');
+    });
+
+    // 3. Reset Filter Toolbar counts
+    const filterAll = document.getElementById('filter-count-all');
+    const filterMerah = document.getElementById('filter-count-merah');
+    const filterKuning = document.getElementById('filter-count-kuning');
+    const filterHijau = document.getElementById('filter-count-hijau');
+    if (filterAll) filterAll.textContent = '0';
+    if (filterMerah) filterMerah.textContent = '0';
+    if (filterKuning) filterKuning.textContent = '0';
+    if (filterHijau) filterHijau.textContent = '0';
+
+    // 4. Render Hero Banner with Empty State prompt
     const banner = document.getElementById('dashboard-hero-banner');
     if (banner) {
+      const u = this.state.user;
+      const roleText = u && u.role === 'admin' ? 'Akun Administrator' : (u ? u.nama : 'Pengguna');
       banner.innerHTML = `
         <div class="bg-surface-container-lowest rounded-2xl p-8 shadow-sm border border-[#e4beba]/60 text-center flex flex-col items-center justify-center gap-space-md">
           <div class="w-16 h-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
             <span class="material-symbols-outlined text-4xl">two_wheeler</span>
           </div>
-          <h2 class="font-headline-md text-headline-md text-on-surface">Belum Ada Sepeda Motor Terdaftar</h2>
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-primary font-mono">${this.escapeHtml(roleText)}</span>
+            <h2 class="font-headline-md text-headline-md text-on-surface mt-1">Belum Ada Sepeda Motor Terdaftar</h2>
+          </div>
           <p class="font-body-md text-body-md text-on-surface-variant max-w-md">
-            Daftarkan sepeda motor Anda sekarang untuk mulai memantau masa pakai komponen dan jadwal perawatan berkala.
+            Akun ini belum memiliki sepeda motor terdaftar. Daftarkan sepeda motor Anda sekarang untuk mulai memantau masa pakai komponen dan jadwal perawatan berkala.
           </p>
-          <button onclick="App.switchTab('daftar-motor')" class="bg-primary hover:bg-primary-container text-on-primary px-space-lg py-3 rounded-xl shadow-sm font-label-lg font-semibold flex items-center gap-2">
+          <button onclick="App.switchTab('daftar-motor')" class="bg-primary hover:bg-primary-container text-on-primary px-space-lg py-3 rounded-xl shadow-sm font-label-lg font-semibold flex items-center gap-2 cursor-pointer transition-all active:translate-y-0.5">
             <span class="material-symbols-outlined">add_circle</span>
-            <span>Daftarkan Motor Pertama</span>
+            <span>Daftarkan Sepeda Motor Sekarang</span>
           </button>
         </div>
       `;
     }
+
+    // 5. Components Grid Empty State
     const grid = document.getElementById('components-grid');
-    if (grid) grid.innerHTML = '';
+    if (grid) {
+      grid.innerHTML = `
+        <div class="col-span-full bg-surface-container-lowest p-8 rounded-2xl border border-[#e4beba]/40 text-center text-on-surface-variant">
+          <div class="w-12 h-12 rounded-full bg-surface-container mx-auto flex items-center justify-center text-on-surface-variant mb-3">
+            <span class="material-symbols-outlined text-2xl">info</span>
+          </div>
+          <p class="font-title-md text-title-md font-semibold text-on-surface">Tidak Ada Komponen Telemetri</p>
+          <p class="text-xs text-on-surface-variant mt-1">Status pemantauan komponen akan otomatis aktif setelah Anda mendaftarkan sepeda motor.</p>
+        </div>
+      `;
+    }
   },
 
   renderDashboard() {
     const m = this.state.motor;
     const comps = this.state.components;
-    const sum = this.state.summary;
+    const sum = this.state.summary || { merah: 0, kuning: 0, hijau: 0, total: 0 };
 
     // 1. Update Header Bike Name and Garage Dropdown
     const headerBikeName = document.getElementById('header-active-bike-name');
@@ -450,13 +511,20 @@ const App = {
       `;
     }
 
-    // 4. Update Status KPI Banner counts
+    // 4. Update Status KPI Banner counts & subtitles
     const kpiMerah = document.getElementById('kpi-merah-count');
     const kpiKuning = document.getElementById('kpi-kuning-count');
     const kpiHijau = document.getElementById('kpi-hijau-count');
     if (kpiMerah) kpiMerah.textContent = sum.merah;
     if (kpiKuning) kpiKuning.textContent = sum.kuning;
     if (kpiHijau) kpiHijau.textContent = sum.hijau;
+
+    const subMerah = document.getElementById('kpi-merah-subtitle');
+    const subKuning = document.getElementById('kpi-kuning-subtitle');
+    const subHijau = document.getElementById('kpi-hijau-subtitle');
+    if (subMerah) subMerah.textContent = 'Sisa km ≤ 0 atau sisa hari ≤ 0';
+    if (subKuning) subKuning.textContent = '< 500 km atau < 7 hari tersisa';
+    if (subHijau) subHijau.textContent = 'Jarak tempuh & waktu aman';
 
     // Update Filter Toolbar counts
     const filterAll = document.getElementById('filter-count-all');
@@ -1114,18 +1182,40 @@ const App = {
   },
 
   async installPWA() {
-    if (!this.state.deferredInstallPrompt) {
-      this.showToast('Aplikasi sudah terpasang atau browser Anda belum mendukung instalasi otomatis.', 'info');
-      return;
+    // 1. Jalankan prompt native PWA jika peramban sudah mengizinkan
+    if (this.state.deferredInstallPrompt) {
+      try {
+        this.state.deferredInstallPrompt.prompt();
+        const { outcome } = await this.state.deferredInstallPrompt.userChoice;
+        if (outcome === 'accepted') {
+          this.showToast('MotoCare Digital berhasil dipasang!', 'check_circle');
+        }
+        this.state.deferredInstallPrompt = null;
+        return;
+      } catch (err) {
+        console.warn('PWA prompt error:', err);
+      }
     }
-    this.state.deferredInstallPrompt.prompt();
-    const { outcome } = await this.state.deferredInstallPrompt.userChoice;
-    if (outcome === 'accepted') {
-      this.showToast('Memasang MotoCare Digital...', 'check_circle');
+
+    // 2. Langsung masuk ke mode aplikasi mandiri (Standalone App Window)
+    // Berjalan langsung di Brave, Chrome, Edge tanpa perlu menu titik tiga
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    const appUrl = window.location.href;
+
+    if (!isStandalone) {
+      const appWin = window.open(
+        appUrl,
+        'MotoCareApp',
+        'popup=yes,width=1280,height=820,menubar=no,toolbar=no,location=no,status=no,scrollbars=yes,resizable=yes'
+      );
+      if (appWin) {
+        appWin.focus();
+        this.showToast('Membuka MotoCare dalam mode aplikasi langsung...', 'check_circle');
+        return;
+      }
     }
-    this.state.deferredInstallPrompt = null;
-    const installBtn = document.getElementById('btn-pwa-install');
-    if (installBtn) installBtn.classList.add('hidden');
+
+    this.showToast('Aplikasi MotoCare sudah aktif dalam mode layar mandiri.', 'check_circle');
   },
 
   focusWorkshop(lat, lng) {
@@ -1978,6 +2068,11 @@ const App = {
     if (res.success) {
       this.closeUserSwitcher();
       this.state.user = res.user;
+      this.state.motor = null;
+      this.state.userMotors = [];
+      this.state.components = [];
+      this.state.summary = { merah: 0, kuning: 0, hijau: 0, total: 0 };
+      this.state.componentFilter = 'all';
       this.updateUserUI();
       this.showToast(res.message, 'account_circle');
       await this.refreshData();

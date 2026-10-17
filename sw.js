@@ -3,13 +3,15 @@
  * Provides offline caching, app shell pre-caching, and background resilience.
  */
 
-const CACHE_NAME = 'motocare-cache-v2';
+const CACHE_NAME = 'motocare-cache-v4';
 const PRECACHE_ASSETS = [
   './',
   './index.php',
   './manifest.json',
   './assets/css/custom.css',
   './assets/js/app.js',
+  './assets/icons/icon-192.png',
+  './assets/icons/icon-512.png',
   './assets/icons/icon.svg',
   './assets/icons/icon-192.svg'
 ];
@@ -41,7 +43,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch: Network-first for API, Stale-while-revalidate for static assets
+// Fetch: Network-first for API & navigation, Stale-while-revalidate for static assets
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -51,14 +53,26 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 1. Dynamic API requests (Network-first with offline cache fallback)
+  // 1. Navigation requests (Page reloads, clean URLs)
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request).catch(() => {
+        return caches.match(request).then((cached) => {
+          return cached || caches.match('./') || caches.match('./index.php');
+        });
+      })
+    );
+    return;
+  }
+
+  // 2. Dynamic API requests (Network-first with offline cache fallback)
   if (url.searchParams.has('action') || url.pathname.includes('/api/')) {
     event.respondWith(
       fetch(request)
         .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
+          if (networkResponse && networkResponse.status === 200 && !networkResponse.redirected) {
             const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, responseToCache));
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, responseToCache)).catch(() => {});
           }
           return networkResponse;
         })
@@ -80,17 +94,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. App Shell & Static assets (Stale-While-Revalidate)
+  // 3. Static assets (Stale-While-Revalidate)
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       const fetchPromise = fetch(request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
+        if (networkResponse && networkResponse.status === 200 && !networkResponse.redirected) {
           const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, responseToCache));
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, responseToCache)).catch(() => {});
         }
         return networkResponse;
       }).catch(() => {
-        // Fallback to cached version if offline
         return cachedResponse;
       });
 
