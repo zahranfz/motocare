@@ -1,32 +1,94 @@
-# MotoCare Digital - Git Ignore
+# MotoCare Digital - Git Ignore Configuration
 
-# Local SQLite databases & data files
+# ==========================================
+# 1. Local Database & SQLite Data Files
+# ==========================================
 data/*.db
 data/*.sqlite
+data/*.sqlite3
 data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+!data/.gitkeep
 
-# Temporary PDF downloads & exports
+# ==========================================
+# 2. User Uploads (Receipts & Invoices)
+# ==========================================
+uploads/nota/*
+!uploads/nota/.gitkeep
+uploads/*
+!uploads/.gitkeep
+!uploads/nota/
+
+# ==========================================
+# 3. Development Scratch Scripts & Temporary Tests
+# ==========================================
+scratch/
+test_cookie.txt
+cookie.txt
+extract_step*.php
+*.tmp
+
+# ==========================================
+# 4. Generated PDFs & Service Booklet Exports
+# ==========================================
 *.pdf
 Buku_Servis_MotoCare_*.pdf
 
-# Environment & local flags
+# ==========================================
+# 5. Environment Configurations & Local Flags
+# ==========================================
 .env
 .env.local
+.env.*.local
+*.flag
 use_mysql.flag
 
-# Logs
+# ==========================================
+# 6. Logs & Error Traces
+# ==========================================
 *.log
 error_log
+php_errors.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# OS & Editor generated files
+# ==========================================
+# 7. Package Managers & Dependencies
+# ==========================================
+node_modules/
+vendor/
+composer.phar
+
+# ==========================================
+# 8. OS Generated Files
+# ==========================================
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 desktop.ini
-.vscode/
+
+# ==========================================
+# 9. IDE & Editor Artifacts
+# ==========================================
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 .idea/
+*.sublime-project
+*.sublime-workspace
 *.swp
+*.swo
 *~
 
-# Temporary cache
+# ==========================================
+# 10. Temporary Cache Directories
+# ==========================================
 tmp/
 temp/
+.cache/

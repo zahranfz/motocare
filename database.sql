@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS `riwayat_servis` (
   `bengkel` VARCHAR(150) DEFAULT NULL,
   `status` ENUM('aktif', 'dibatalkan') NOT NULL DEFAULT 'aktif',
   `created_at` DATETIME NOT NULL,
+  `foto_nota` VARCHAR(255) DEFAULT NULL,
   FOREIGN KEY (`user_motor_id`) REFERENCES `user_motor`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

@@ -50,6 +50,13 @@ function getDB() {
 
     if ($isNew || filesize($dbPath) === 0) {
         initSchemaAndSeed($pdo);
+    } else {
+        // Auto-migration: ensure foto_nota column exists
+        try {
+            $pdo->exec("ALTER TABLE riwayat_servis ADD COLUMN foto_nota TEXT DEFAULT NULL;");
+        } catch (Exception $e) {
+            // Column already exists
+        }
     }
 
     return $pdo;
@@ -130,6 +137,7 @@ function initSchemaAndSeed($pdo) {
         bengkel TEXT,
         status TEXT NOT NULL DEFAULT 'aktif',
         created_at DATETIME NOT NULL,
+        foto_nota TEXT,
         FOREIGN KEY (user_motor_id) REFERENCES user_motor(id)
     )");
 

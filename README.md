@@ -95,6 +95,33 @@ Untuk kenyamanan pengujian fitur dan penilaian dewan juri, telah disediakan tomb
 
 ---
 
+## ⚡ Fitur Unggulan Tambahan (Quick Wins & Smart Integrations)
+
+### 1. Garasi Multi-Motor (Multi-Motor Garage Switcher)
+- Pengguna dapat mendaftarkan **lebih dari 1 sepeda motor** ke dalam garasi akun yang sama.
+- Dropdown interaktif di navbar atas memungkinkan beralih konteks motor aktif secara instan pada dasbor, buku riwayat servis, maupun ekspor PDF.
+
+### 2. Pencatatan Biaya & Cost Tracker (Telemetry Finansial)
+- Strip metrik 4-kartu pada halaman Riwayat Servis yang menghitung:
+  - **Total Biaya Servis:** Akumulasi pengeluaran perawatan aktif.
+  - **Rata-rata per Servis:** Biaya rata-rata setiap kali berkunjung ke bengkel.
+  - **Cost per km:** Rasio biaya servis terhadap total jarak tempuh odometer (Rp/km).
+  - **Bukti Nota & Struk:** Jumlah transaksi yang memiliki lampiran digital.
+
+### 3. Lampiran Foto Nota Servis (Digital Receipt Scanner)
+- Opsi melampirkan foto struk/nota pembayaran baik saat konfirmasi penggantian komponen maupun pencatatan servis manual.
+- File disimpan aman di server lokal (`uploads/nota/`) dengan pratinjau thumbnail di tabel riwayat serta modal pop-up untuk melihat gambar resolusi penuh dan mengunduh berkas.
+
+### 4. Integrasi WhatsApp (Smart WA Reminder & Direct Workshop Booking)
+- **Kirim Pengingat ke WhatsApp:** Tombol di dasbor untuk membuat pesan WhatsApp siap kirim yang terstruktur rapi memuat ringkasan komponen berstatus Merah/Kuning, odometer, rekomendasi kode part, serta bengkel terdekat.
+- **Booking / Chat Bengkel via WA:** Tombol chat langsung pada setiap kartu bengkel dan popup peta dengan template permohonan reservasi slot mekanik otomatis.
+
+### 5. Progressive Web App (PWA) & Offline Support
+- **Web App Manifest (`manifest.json`):** Aplikasi dapat dipasang langsung (*Add to Home Screen / Install App*) di Android, iOS, maupun desktop seperti aplikasi native.
+- **Service Worker (`sw.js`):** Pre-caching aset inti dan penanganan offline cerdas (*Network-first* untuk API dengan fallback ke cache saat sinyal minim).
+
+---
+
 ## 📂 Struktur Direktori Proyek
 
 ```

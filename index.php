@@ -9,6 +9,16 @@
   <meta name="description" content="MotoCare Digital - Motorcycle Maintenance Tracker & Smart Assistant. Pelacak servis motor berkala, rekomendasi suku cadang, pencari bengkel resmi dan umum, serta buku servis digital PDF."/>
   <title>MotoCare Digital — Smart Maintenance Tracker & Telemetry</title>
 
+  <!-- PWA Manifest & Mobile Web App Meta -->
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="theme-color" content="#AF101A"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="MotoCare"/>
+  <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg"/>
+  <link rel="apple-touch-icon" href="assets/icons/icon.svg"/>
+
   <!-- Typography: Space Grotesk & Hanken Grotesk -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -169,13 +179,47 @@
         </a>
       </nav>
 
-      <!-- Quick Actions: Odometer & User Profile -->
+      <!-- Quick Actions: Garage Switcher, Odometer & User Profile -->
       <div class="flex items-center gap-2 sm:gap-3">
         
+        <!-- Active Bike Selector / Garage Switcher Dropdown -->
+        <div class="relative" id="garage-dropdown-container">
+          <button onclick="App.toggleGarageDropdown()" id="garage-dropdown-btn" class="flex items-center gap-1.5 bg-surface-container-lowest hover:bg-surface-container text-on-surface px-2.5 sm:px-3 py-1.5 rounded-lg border border-[#e4beba]/60 shadow-xs transition-all cursor-pointer" title="Garasi Saya &amp; Pilih Motor Aktif" type="button">
+            <span class="material-symbols-outlined text-primary text-[18px]">two_wheeler</span>
+            <span class="font-label-md text-xs font-bold max-w-[100px] sm:max-w-[150px] truncate" id="header-active-bike-name">Vario 160</span>
+            <span class="material-symbols-outlined text-on-surface-variant text-[16px]">expand_more</span>
+          </button>
+          <!-- Garage Dropdown Menu -->
+          <div id="garage-dropdown-menu" class="hidden absolute right-0 mt-2 w-72 sm:w-80 bg-surface-container-lowest rounded-xl shadow-2xl border border-[#e4beba]/60 p-2.5 z-50">
+            <div class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider pb-2 mb-2 border-b border-surface-container-high flex justify-between items-center">
+              <span class="flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-primary text-sm">garage</span>
+                <span>Garasi Sepeda Motor</span>
+              </span>
+              <span id="garage-motor-count-badge" class="bg-primary/10 text-primary font-mono text-[10px] px-2 py-0.5 rounded-full font-bold">1 Motor</span>
+            </div>
+            <div id="garage-dropdown-list" class="space-y-1.5 max-h-56 overflow-y-auto">
+              <!-- Rendered dynamically -->
+            </div>
+            <div class="pt-2 mt-2 border-t border-surface-container-high">
+              <button onclick="App.openRegisterNewMotorModal()" class="w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-primary hover:bg-primary-container text-on-primary rounded-lg text-xs font-bold shadow-xs transition-all" type="button">
+                <span class="material-symbols-outlined text-base">add_circle</span>
+                <span>+ Tambah Sepeda Motor Baru</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Live Odometer Button -->
         <button onclick="App.openOdoModal()" class="flex items-center gap-1.5 bg-surface-container-lowest hover:bg-surface-container text-on-surface px-3 py-1.5 rounded-lg border border-surface-container-high/80 shadow-xs transition-all cursor-pointer" title="Perbarui Odometer Motor" type="button">
           <span class="material-symbols-outlined text-primary text-[18px]">speed</span>
           <span class="font-label-md text-xs font-mono font-bold" id="header-active-odometer">11.200 km</span>
+        </button>
+
+        <!-- PWA Install Button (Displays when install prompt is triggered) -->
+        <button id="btn-pwa-install" onclick="App.installPWA()" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20 text-xs font-bold hover:bg-primary/20 transition-all shadow-xs cursor-pointer" title="Pasang MotoCare ke Layar Utama HP / Desktop" type="button">
+          <span class="material-symbols-outlined text-[18px]">install_mobile</span>
+          <span class="hidden lg:inline">Install App</span>
         </button>
 
         <!-- User Profile Avatar Pill -->
@@ -865,61 +909,77 @@
           </div>
         </div>
 
-        <!-- Telemetry Summary Metric Strip -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
-          <!-- Metric 1: Total Servis -->
-          <div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm border border-[#e4beba]/30 flex flex-col justify-between gap-space-md relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-1.5 h-full bg-secondary"></div>
+        <!-- Cost Tracker & Telemetry Summary Metric Strip -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+          <!-- Metric 1: Total Biaya Servis -->
+          <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm border border-[#e4beba]/30 flex flex-col justify-between gap-space-sm relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-1.5 h-full bg-primary"></div>
             <div class="flex items-start justify-between pl-1">
               <div class="flex flex-col">
-                <span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Total Servis Tercatat</span>
-                <span id="hist-total-servis" class="font-telemetry-num text-telemetry-num text-on-surface mt-space-xs">0 Kali</span>
+                <span class="font-label-sm text-[11px] uppercase tracking-wider text-on-surface-variant font-semibold">Total Biaya Servis</span>
+                <span id="hist-total-biaya" class="font-telemetry-num text-xl font-bold text-on-surface mt-1 font-mono">Rp 0</span>
               </div>
-              <div class="flex items-center gap-1 bg-secondary-container/40 text-on-secondary-container px-space-xs py-1 rounded-full text-label-sm font-semibold">
-                <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
-                <span>Terverifikasi</span>
+              <div class="p-2 rounded-lg bg-primary/10 text-primary">
+                <span class="material-symbols-outlined text-lg">payments</span>
               </div>
             </div>
-            <div class="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant pt-space-xs pl-1">
-              <span>Odo Pertama: <strong id="hist-first-odo" class="font-mono text-on-surface">-</strong></span>
-              <span>Terakhir: <strong id="hist-last-odo" class="font-mono text-on-surface">-</strong></span>
+            <div class="flex items-center justify-between text-xs text-on-surface-variant pt-1 pl-1 border-t border-surface-container-high/60">
+              <span id="hist-total-servis">0 Kali Servis</span>
+              <span class="text-primary font-medium">Akumulasi</span>
             </div>
           </div>
 
-          <!-- Metric 2: Total Biaya Suku Cadang -->
-          <div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm border border-[#e4beba]/30 flex flex-col justify-between gap-space-md relative overflow-hidden">
+          <!-- Metric 2: Rata-Rata Biaya -->
+          <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm border border-[#e4beba]/30 flex flex-col justify-between gap-space-sm relative overflow-hidden">
             <div class="absolute top-0 left-0 w-1.5 h-full bg-tertiary"></div>
             <div class="flex items-start justify-between pl-1">
               <div class="flex flex-col">
-                <span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Total Biaya Suku Cadang</span>
-                <span id="hist-total-biaya" class="font-telemetry-num text-telemetry-num text-on-surface mt-space-xs">Rp 0</span>
+                <span class="font-label-sm text-[11px] uppercase tracking-wider text-on-surface-variant font-semibold">Rata-rata per Servis</span>
+                <span id="hist-avg-biaya" class="font-telemetry-num text-xl font-bold text-on-surface mt-1 font-mono">Rp 0</span>
               </div>
-              <div class="p-space-xs rounded-lg bg-surface-container-high text-tertiary">
-                <span class="material-symbols-outlined text-title-lg">payments</span>
+              <div class="p-2 rounded-lg bg-surface-container-high text-tertiary">
+                <span class="material-symbols-outlined text-lg">analytics</span>
               </div>
             </div>
-            <div class="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant pt-space-xs pl-1">
-              <span>Transparansi Log</span>
-              <span class="text-secondary font-medium">Rekapitulasi Akurat</span>
+            <div class="flex items-center justify-between text-xs text-on-surface-variant pt-1 pl-1 border-t border-surface-container-high/60">
+              <span>Per Penggantian</span>
+              <span class="text-tertiary font-medium">Rata-rata</span>
             </div>
           </div>
 
-          <!-- Metric 3: Kedisiplinan Servis -->
-          <div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm border border-[#e4beba]/30 flex flex-col justify-between gap-space-md relative overflow-hidden">
+          <!-- Metric 3: Cost Per Kilometer -->
+          <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm border border-[#e4beba]/30 flex flex-col justify-between gap-space-sm relative overflow-hidden">
             <div class="absolute top-0 left-0 w-1.5 h-full bg-secondary"></div>
             <div class="flex items-start justify-between pl-1">
               <div class="flex flex-col">
-                <span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Integritas Data Servis</span>
-                <span class="font-telemetry-num text-telemetry-num text-on-surface mt-space-xs">100% Digital</span>
+                <span class="font-label-sm text-[11px] uppercase tracking-wider text-on-surface-variant font-semibold">Biaya per Kilometer</span>
+                <span id="hist-cost-per-km" class="font-telemetry-num text-xl font-bold text-secondary mt-1 font-mono">Rp 0 / km</span>
               </div>
-              <div class="flex items-center gap-1 bg-secondary-container/40 text-on-secondary-container px-space-xs py-1 rounded-full text-label-sm font-semibold">
-                <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">verified</span>
-                <span>Standar Pabrikan</span>
+              <div class="p-2 rounded-lg bg-secondary-container/40 text-on-secondary-container">
+                <span class="material-symbols-outlined text-lg">speed</span>
               </div>
             </div>
-            <div class="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant pt-space-xs pl-1">
-              <span>Buku Servis Digital Terkoneksi</span>
-              <span class="font-semibold text-secondary">Anti Rusak / Hilang</span>
+            <div class="flex items-center justify-between text-xs text-on-surface-variant pt-1 pl-1 border-t border-surface-container-high/60">
+              <span>Efisiensi Motor</span>
+              <span class="text-secondary font-medium">Cost / km</span>
+            </div>
+          </div>
+
+          <!-- Metric 4: Lampiran Nota Terlampir -->
+          <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm border border-[#e4beba]/30 flex flex-col justify-between gap-space-sm relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-1.5 h-full bg-secondary"></div>
+            <div class="flex items-start justify-between pl-1">
+              <div class="flex flex-col">
+                <span class="font-label-sm text-[11px] uppercase tracking-wider text-on-surface-variant font-semibold">Bukti Nota &amp; Struk</span>
+                <span id="hist-receipt-count" class="font-telemetry-num text-xl font-bold text-on-surface mt-1 font-mono">0 Terlampir</span>
+              </div>
+              <div class="p-2 rounded-lg bg-surface-container-high text-secondary">
+                <span class="material-symbols-outlined text-lg">receipt_long</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between text-xs text-on-surface-variant pt-1 pl-1 border-t border-surface-container-high/60">
+              <span>Odo: <span id="hist-last-odo">-</span></span>
+              <span class="text-secondary font-medium">Terverifikasi</span>
             </div>
           </div>
         </div>
@@ -954,6 +1014,7 @@
                   <th class="p-space-md">Odometer</th>
                   <th class="p-space-md">Bengkel / Lokasi</th>
                   <th class="p-space-md">Biaya</th>
+                  <th class="p-space-md">Bukti Nota</th>
                   <th class="p-space-md">Status</th>
                   <th class="p-space-md text-right">Aksi</th>
                 </tr>
@@ -1367,6 +1428,26 @@
             <label class="block text-xs font-semibold text-on-surface mb-1">Catatan Tambahan (Opsional)</label>
             <input type="text" id="reset-catatan-input" value="Penggantian rutin berkala" class="w-full bg-surface-container-low p-2 rounded border border-[#e4beba]/60 text-xs"/>
           </div>
+          <div>
+            <label class="block text-xs font-semibold text-on-surface mb-1 flex items-center justify-between">
+              <span class="flex items-center gap-1">
+                <span class="material-symbols-outlined text-xs text-primary">receipt_long</span>
+                Foto Nota / Kuitansi Servis (Opsional)
+              </span>
+              <span class="text-[10px] text-on-surface-variant font-normal">Maks 5 MB (JPG, PNG)</span>
+            </label>
+            <div class="border border-dashed border-[#e4beba] hover:border-primary rounded-lg p-2.5 bg-surface-container-low transition-colors text-center cursor-pointer" onclick="document.getElementById('reset-nota-file').click()">
+              <input type="file" id="reset-nota-file" accept="image/*" class="hidden" onchange="App.handleNotaFileSelect(event, 'reset-nota-preview', 'reset-nota-preview-container', 'reset-nota-placeholder', 'reset')"/>
+              <div id="reset-nota-placeholder" class="flex items-center justify-center gap-2 py-1">
+                <span class="material-symbols-outlined text-on-surface-variant text-lg">add_a_photo</span>
+                <span class="text-xs text-on-surface-variant font-medium">Klik untuk lampirkan foto nota fisik</span>
+              </div>
+              <div id="reset-nota-preview-container" class="hidden relative inline-block">
+                <img id="reset-nota-preview" src="" alt="Preview Nota" class="max-h-24 rounded mx-auto shadow-xs border border-surface-container-high object-cover"/>
+                <button type="button" onclick="App.removeNotaPreview(event, 'reset-nota-file', 'reset-nota-preview', 'reset-nota-preview-container', 'reset-nota-placeholder', 'reset')" class="absolute -top-1 -right-1 bg-error text-on-error rounded-full w-5 h-5 flex items-center justify-center text-xs shadow-sm hover:opacity-90" title="Hapus foto">✕</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="bg-surface-container-high/60 p-space-sm rounded text-body-sm text-on-surface-variant flex items-start gap-space-xs">
@@ -1498,6 +1579,26 @@
         <div>
           <label class="block text-xs font-semibold text-on-surface mb-1">Catatan</label>
           <input type="text" id="manual-serv-notes" placeholder="Catatan servis berkala" class="w-full bg-surface-container-low p-2 rounded border border-[#e4beba]/60 text-xs"/>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-on-surface mb-1 flex items-center justify-between">
+            <span class="flex items-center gap-1">
+              <span class="material-symbols-outlined text-xs text-primary">receipt_long</span>
+              Foto Nota / Kuitansi Servis (Opsional)
+            </span>
+            <span class="text-[10px] text-on-surface-variant font-normal">Maks 5 MB</span>
+          </label>
+          <div class="border border-dashed border-[#e4beba] hover:border-primary rounded-lg p-2.5 bg-surface-container-low transition-colors text-center cursor-pointer" onclick="document.getElementById('manual-nota-file').click()">
+            <input type="file" id="manual-nota-file" accept="image/*" class="hidden" onchange="App.handleNotaFileSelect(event, 'manual-nota-preview', 'manual-nota-preview-container', 'manual-nota-placeholder', 'manual')"/>
+            <div id="manual-nota-placeholder" class="flex items-center justify-center gap-2 py-1">
+              <span class="material-symbols-outlined text-on-surface-variant text-lg">add_a_photo</span>
+              <span class="text-xs text-on-surface-variant font-medium">Klik untuk lampirkan foto nota fisik</span>
+            </div>
+            <div id="manual-nota-preview-container" class="hidden relative inline-block">
+              <img id="manual-nota-preview" src="" alt="Preview Nota" class="max-h-24 rounded mx-auto shadow-xs border border-surface-container-high object-cover"/>
+              <button type="button" onclick="App.removeNotaPreview(event, 'manual-nota-file', 'manual-nota-preview', 'manual-nota-preview-container', 'manual-nota-placeholder', 'manual')" class="absolute -top-1 -right-1 bg-error text-on-error rounded-full w-5 h-5 flex items-center justify-center text-xs shadow-sm hover:opacity-90" title="Hapus foto">✕</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1699,6 +1800,44 @@
       </div>
     </div>
   </footer>
+
+  <!-- ======================================================== -->
+  <!-- MODAL 5: PREVIEW BUKTI NOTA / KUITANSI SERVIS -->
+  <!-- ======================================================== -->
+  <div id="modal-preview-nota" class="fixed inset-0 z-50 bg-inverse-surface/70 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-surface-container-lowest rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border border-[#e4beba]/60 flex flex-col max-h-[90vh]">
+      <div class="bg-surface-container-low px-5 py-3.5 flex items-center justify-between border-b border-surface-container-high">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-xl">receipt_long</span>
+          <div>
+            <h3 class="font-title-md text-sm font-bold text-on-surface" id="preview-nota-title">Bukti Nota Servis</h3>
+            <p class="text-[11px] text-on-surface-variant font-mono" id="preview-nota-subtitle">-</p>
+          </div>
+        </div>
+        <button onclick="App.closeReceiptModal()" class="text-on-surface-variant hover:text-on-surface p-1 rounded-lg hover:bg-surface-container" type="button">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="p-4 overflow-y-auto flex-1 flex flex-col items-center justify-center bg-black/5 min-h-[220px]">
+        <img id="preview-nota-img" src="" alt="Bukti Kuitansi" class="max-h-[55vh] max-w-full rounded-lg shadow-md border border-surface-container-high object-contain"/>
+      </div>
+
+      <div class="bg-surface-container-low px-5 py-3 flex items-center justify-between border-t border-surface-container-high">
+        <div class="text-xs">
+          <span class="text-on-surface-variant">Total Biaya: </span>
+          <strong id="preview-nota-cost" class="font-mono text-primary font-bold">Rp 0</strong>
+        </div>
+        <div class="flex items-center gap-2">
+          <a id="preview-nota-download" href="#" target="_blank" download class="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">open_in_new</span>
+            <span>Buka Penuh</span>
+          </a>
+          <button onclick="App.closeReceiptModal()" class="px-3 py-1.5 rounded-lg bg-primary hover:bg-primary-container text-on-primary text-xs font-semibold">Tutup</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Application Main Script -->
   <script src="assets/js/app.js"></script>

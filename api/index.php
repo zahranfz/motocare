@@ -61,6 +61,59 @@ function requireAdmin($user) {
     }
 }
 
+function getActiveUserMotor($pdo, $userId, $requestedMotorId = null) {
+    $targetId = (int)($requestedMotorId ?: ($_SESSION['active_motor_id'] ?? 0));
+    $motor = null;
+    if ($targetId > 0) {
+        $stmt = $pdo->prepare("
+            SELECT um.*, mm.merek, mm.tipe, mm.varian
+            FROM user_motor um
+            JOIN master_motor mm ON um.master_motor_id = mm.id
+            WHERE um.user_id = ? AND um.id = ?
+        ");
+        $stmt->execute([$userId, $targetId]);
+        $motor = $stmt->fetch();
+    }
+    if (!$motor) {
+        $stmt = $pdo->prepare("
+            SELECT um.*, mm.merek, mm.tipe, mm.varian
+            FROM user_motor um
+            JOIN master_motor mm ON um.master_motor_id = mm.id
+            WHERE um.user_id = ?
+            ORDER BY um.id DESC LIMIT 1
+        ");
+        $stmt->execute([$userId]);
+        $motor = $stmt->fetch();
+    }
+    if ($motor) {
+        $_SESSION['active_motor_id'] = (int)$motor['id'];
+    }
+    return $motor;
+}
+
+function saveBase64Image($base64Data, $prefix = 'nota_') {
+    if (empty($base64Data) || !preg_match('/^data:image\/(\w+);base64,/', $base64Data, $type)) {
+        return null;
+    }
+    $data = substr($base64Data, strpos($base64Data, ',') + 1);
+    $type = strtolower($type[1]);
+    if (!in_array($type, ['jpg', 'jpeg', 'png', 'webp'])) {
+        $type = 'jpg';
+    }
+    $data = base64_decode($data);
+    if ($data === false) {
+        return null;
+    }
+    $uploadDir = __DIR__ . '/../uploads/nota';
+    if (!file_exists($uploadDir)) {
+        mkdir($uploadDir, 0777, true);
+    }
+    $filename = $prefix . time() . '_' . bin2hex(random_bytes(4)) . '.' . $type;
+    $filePath = $uploadDir . '/' . $filename;
+    file_put_contents($filePath, $data);
+    return 'uploads/nota/' . $filename;
+}
+
 // Calculation Engine according to BR-001 - BR-007
 function calculateComponentStatus($item, $currentOdo) {
     $intervalKm = $item['interval_km'] !== null ? (int)$item['interval_km'] : null;
@@ -240,17 +293,34 @@ if (!defined('MOTOCARE_TEST_MODE')) {
     // ==========================================
     case 'get_dashboard':
         $user = getCurrentUser($pdo);
+        $reqMotorId = isset($_GET['motor_id']) ? (int)$_GET['motor_id'] : null;
+        $motor = getActiveUserMotor($pdo, $user['id'], $reqMotorId);
 
-        // Fetch user active bike
-        $stmtMotor = $pdo->prepare("
-            SELECT um.*, mm.merek, mm.tipe, mm.varian
+        // Fetch all motors owned by user for garage switcher
+        $stmtAll = $pdo->prepare("
+            SELECT um.id, um.nomor_polisi, um.odometer_saat_ini, mm.merek, mm.tipe, mm.varian
             FROM user_motor um
             JOIN master_motor mm ON um.master_motor_id = mm.id
             WHERE um.user_id = ?
-            ORDER BY um.id DESC LIMIT 1
+            ORDER BY um.id ASC
         ");
-        $stmtMotor->execute([$user['id']]);
-        $motor = $stmtMotor->fetch();
+        $stmtAll->execute([$user['id']]);
+        $allMotors = $stmtAll->fetchAll();
+
+        // Calculate mini health summary for each motor in garage
+        foreach ($allMotors as &$m) {
+            $stParts = $pdo->prepare("SELECT * FROM user_part_status WHERE user_motor_id = ?");
+            $stParts->execute([$m['id']]);
+            $pList = $stParts->fetchAll();
+            $mCounts = ['merah' => 0, 'kuning' => 0, 'hijau' => 0];
+            foreach ($pList as $p) {
+                $c = calculateComponentStatus($p, (int)$m['odometer_saat_ini']);
+                $mCounts[$c['status_code']]++;
+            }
+            $m['counts'] = $mCounts;
+            $m['is_active'] = ($motor && $m['id'] == $motor['id']);
+        }
+        unset($m);
 
         if (!$motor) {
             jsonResponse([
@@ -258,6 +328,8 @@ if (!defined('MOTOCARE_TEST_MODE')) {
                 'user' => $user,
                 'has_motor' => false,
                 'motor' => null,
+                'user_motors' => $allMotors,
+                'active_motor_id' => null,
                 'components' => [],
                 'summary' => ['merah' => 0, 'kuning' => 0, 'hijau' => 0, 'total' => 0],
             ]);
@@ -317,6 +389,8 @@ if (!defined('MOTOCARE_TEST_MODE')) {
             'user' => $user,
             'has_motor' => true,
             'motor' => array_merge($motor, ['odo_updated_diff' => $odoUpdatedDiff]),
+            'user_motors' => $allMotors,
+            'active_motor_id' => (int)$motor['id'],
             'components' => $processedParts,
             'summary' => [
                 'merah' => $counts['merah'],
@@ -399,6 +473,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
         $bengkel = trim($input['bengkel'] ?? 'AHASS 07123 Daya Motor Depok');
         $biaya = (int)($input['biaya'] ?? 55000);
         $catatan = trim($input['catatan'] ?? 'Penggantian rutin berkala');
+        $fotoNota = saveBase64Image($input['foto_nota'] ?? null);
 
         // Check ownership and part status
         $stmt = $pdo->prepare("
@@ -452,8 +527,8 @@ if (!defined('MOTOCARE_TEST_MODE')) {
             $insService = $pdo->prepare("
                 INSERT INTO riwayat_servis (
                     user_motor_id, user_part_status_id, nama_komponen, kode_part,
-                    odometer_saat_ganti, tanggal_ganti, catatan, biaya, bengkel, status, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'aktif', ?)
+                    odometer_saat_ganti, tanggal_ganti, catatan, biaya, bengkel, status, foto_nota, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'aktif', ?, ?)
             ");
             $insService->execute([
                 $part['motor_id'],
@@ -465,6 +540,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
                 $catatan,
                 $biaya,
                 $bengkel,
+                $fotoNota,
                 $now,
             ]);
 
@@ -484,13 +560,11 @@ if (!defined('MOTOCARE_TEST_MODE')) {
     // ==========================================
     case 'get_history':
         $user = getCurrentUser($pdo);
-
-        $stmtMotor = $pdo->prepare("SELECT id, nomor_polisi, odometer_saat_ini FROM user_motor WHERE user_id = ? ORDER BY id DESC LIMIT 1");
-        $stmtMotor->execute([$user['id']]);
-        $motor = $stmtMotor->fetch();
+        $requestedMotorId = isset($_GET['motor_id']) ? (int)$_GET['motor_id'] : (int)($input['motor_id'] ?? 0);
+        $motor = getActiveUserMotor($pdo, $user['id'], $requestedMotorId > 0 ? $requestedMotorId : null);
 
         if (!$motor) {
-            jsonResponse(['success' => true, 'records' => [], 'metrics' => ['total_services' => 0, 'total_cost' => 0, 'first_odo' => 0, 'last_odo' => 0]]);
+            jsonResponse(['success' => true, 'records' => [], 'metrics' => ['total_services' => 0, 'total_cost' => 0, 'first_odo' => 0, 'last_odo' => 0, 'avg_cost' => 0, 'cost_per_km' => 0]]);
         }
 
         $stmt = $pdo->prepare("
@@ -533,6 +607,8 @@ if (!defined('MOTOCARE_TEST_MODE')) {
 
         $firstOdo = !empty($records) ? min(array_column($records, 'odometer_saat_ganti')) : $motor['odometer_saat_ini'];
         $lastOdo = !empty($records) ? max(array_column($records, 'odometer_saat_ganti')) : $motor['odometer_saat_ini'];
+        $currentOdo = (int)$motor['odometer_saat_ini'];
+        $costPerKm = $currentOdo > 0 ? round($totalCost / $currentOdo, 2) : 0;
 
         jsonResponse([
             'success' => true,
@@ -543,6 +619,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
                 'first_odo' => $firstOdo,
                 'last_odo' => $lastOdo,
                 'avg_cost' => $activeCount > 0 ? round($totalCost / $activeCount) : 0,
+                'cost_per_km' => $costPerKm,
             ],
         ]);
         break;
@@ -607,6 +684,10 @@ if (!defined('MOTOCARE_TEST_MODE')) {
     case 'add_manual_service':
         $user = getCurrentUser($pdo);
         $userMotorId = (int)($input['user_motor_id'] ?? 0);
+        if ($userMotorId <= 0) {
+            $activeMotor = getActiveUserMotor($pdo, $user['id']);
+            $userMotorId = $activeMotor ? (int)$activeMotor['id'] : 0;
+        }
         $namaKomponen = trim($input['nama_komponen'] ?? '');
         $kodePart = trim($input['kode_part'] ?? '');
         $odometer = (int)($input['odometer'] ?? 0);
@@ -614,6 +695,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
         $bengkel = trim($input['bengkel'] ?? 'Bengkel');
         $biaya = (int)($input['biaya'] ?? 0);
         $catatan = trim($input['catatan'] ?? '');
+        $fotoNota = saveBase64Image($input['foto_nota'] ?? null);
 
         if (empty($namaKomponen) || $odometer <= 0) {
             jsonError("Nama komponen dan angka odometer wajib diisi");
@@ -622,8 +704,8 @@ if (!defined('MOTOCARE_TEST_MODE')) {
         $stmt = $pdo->prepare("
             INSERT INTO riwayat_servis (
                 user_motor_id, user_part_status_id, nama_komponen, kode_part,
-                odometer_saat_ganti, tanggal_ganti, catatan, biaya, bengkel, status, created_at
-            ) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, 'aktif', ?)
+                odometer_saat_ganti, tanggal_ganti, catatan, biaya, bengkel, status, foto_nota, created_at
+            ) VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, 'aktif', ?, ?)
         ");
         $stmt->execute([
             $userMotorId,
@@ -634,6 +716,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
             $catatan,
             $biaya,
             $bengkel,
+            $fotoNota,
             date('Y-m-d H:i:s'),
         ]);
 
@@ -669,12 +752,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
         $odometer = (int)($input['odometer'] ?? 0);
         $customBaselines = $input['custom_baselines'] ?? [];
 
-        // FR-014: 1 motor active limit per account for Phase 1
-        $checkExisting = $pdo->prepare("SELECT id FROM user_motor WHERE user_id = ?");
-        $checkExisting->execute([$user['id']]);
-        if ($checkExisting->fetch()) {
-            jsonError("Akun Anda sudah memiliki sepeda motor aktif terdaftar.");
-        }
+        // Multi-motor support: user can register multiple motorcycles to their garage
 
         // BR-005 & BR-014: Validation
         if ($odometer < 0 || $odometer > 999999) {
@@ -746,14 +824,49 @@ if (!defined('MOTOCARE_TEST_MODE')) {
             $logOdo->execute([$userMotorId, $odometer, $now]);
 
             $pdo->commit();
+
+            // Automatically switch active context to the newly added bike
+            $_SESSION['active_motor_id'] = $userMotorId;
+            session_write_close();
+
             jsonResponse([
                 'success' => true,
-                'message' => "Sepeda motor {$masterMotor['merek']} {$masterMotor['tipe']} berhasil didaftarkan!",
+                'motor_id' => $userMotorId,
+                'message' => "Sepeda motor {$masterMotor['merek']} {$masterMotor['tipe']} berhasil didaftarkan ke garasi!",
             ]);
         } catch (Exception $e) {
             $pdo->rollBack();
             jsonError("Pendaftaran gagal: " . $e->getMessage(), 500);
         }
+        break;
+
+    // ==========================================
+    // MULTI-MOTOR SWITCHER (GARASI MULTI-MOTOR)
+    // ==========================================
+    case 'switch_motor':
+        $user = getCurrentUser($pdo);
+        $motorId = (int)($input['motor_id'] ?? 0);
+
+        if ($motorId <= 0) {
+            jsonError("ID motor tidak valid");
+        }
+
+        $stmt = $pdo->prepare("SELECT id, nomor_polisi FROM user_motor WHERE id = ? AND user_id = ?");
+        $stmt->execute([$motorId, $user['id']]);
+        $motor = $stmt->fetch();
+
+        if (!$motor) {
+            jsonError("Motor tidak ditemukan atau bukan milik Anda", 404);
+        }
+
+        $_SESSION['active_motor_id'] = $motorId;
+        session_write_close();
+
+        jsonResponse([
+            'success' => true,
+            'active_motor_id' => $motorId,
+            'message' => "Berhasil beralih ke motor {$motor['nomor_polisi']}",
+        ]);
         break;
 
     // ==========================================
@@ -779,6 +892,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
                 'lng' => $lng + 0.0035,
                 'address' => 'Jl. Margonda Raya No. 284, Kemiri Muka, Kecamatan Beji, Kota Depok, Jawa Barat 16423',
                 'phone' => '(021) 7720-4491',
+                'wa_phone' => '628117720449',
                 'hours' => 'Senin - Sabtu: 07.30 - 16.30 WIB, Minggu: 08.00 - 14.00 WIB',
                 'parts_stock' => 'Stok Komplit AHM Oil, Busi NGK, Kampas Rem AHM',
                 'rating' => 4.8,
@@ -793,6 +907,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
                 'lng' => $lng + 0.0085,
                 'address' => 'Jl. Margonda Raya No. 102, Pondok Cina, Beji, Kota Depok',
                 'phone' => '(021) 777-3829',
+                'wa_phone' => '628127773829',
                 'hours' => 'Senin - Minggu: 08.00 - 17.00 WIB',
                 'parts_stock' => 'Tersedia Spare Part Asli & PIT Express Cepat',
                 'rating' => 4.7,
@@ -807,6 +922,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
                 'lng' => $lng - 0.0090,
                 'address' => 'Jl. Siliwangi No. 12, Pancoran Mas, Kota Depok',
                 'phone' => '(021) 775-1029',
+                'wa_phone' => '628127751029',
                 'hours' => 'Senin - Sabtu: 08.00 - 16.00 WIB',
                 'parts_stock' => 'Servis Berkala & Ganti Part Bergaransi',
                 'rating' => 4.6,
@@ -821,6 +937,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
                 'lng' => $lng - 0.0110,
                 'address' => 'Jl. Kartini No. 45, Pancoran Mas, Kota Depok',
                 'phone' => '(021) 776-5521',
+                'wa_phone' => '628137765521',
                 'hours' => 'Senin - Sabtu: 08.00 - 17.00 WIB',
                 'parts_stock' => 'Yamalube Asli, Busi, Roller V-Belt',
                 'rating' => 4.7,
@@ -835,6 +952,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
                 'lng' => $lng - 0.0060,
                 'address' => 'Jl. Margonda Raya No. 450, Beji, Kota Depok',
                 'phone' => '0812-9844-3321',
+                'wa_phone' => '6281298443321',
                 'hours' => 'Setiap Hari: 08.00 - 21.00 WIB (Buka Malam)',
                 'parts_stock' => 'Spesialis Matic & Injeksi, Ganti Ban, Kuras Oli',
                 'rating' => 4.6,
@@ -849,6 +967,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
                 'lng' => $lng + 0.0070,
                 'address' => 'Jl. Margonda No. 188, Beji, Depok',
                 'phone' => '0815-1122-3344',
+                'wa_phone' => '6281511223344',
                 'hours' => 'Setiap Hari: 08.30 - 20.30 WIB',
                 'parts_stock' => 'Oli X-Ten, Servis Rasa Mesin Baru, Ban Tubeless',
                 'rating' => 4.5,
@@ -862,7 +981,8 @@ if (!defined('MOTOCARE_TEST_MODE')) {
                 'lat' => $lat + 0.0110,
                 'lng' => $lng + 0.0120,
                 'address' => 'Parkir Margonda Square, Jl. Margonda Raya',
-                'phone' => 'Tidak tersedia',
+                'phone' => '0818-0900-1234',
+                'wa_phone' => '6281809001234',
                 'hours' => '08.00 - 18.00 WIB',
                 'parts_stock' => 'Ganti Aki Bergaransi, Oli Shell/Federal/AHM',
                 'rating' => 4.4,
@@ -877,6 +997,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
                 'lng' => $lng - 0.0040,
                 'address' => 'Jl. Sawo No. 14, Beji, Depok',
                 'phone' => '0857-8899-1122',
+                'wa_phone' => '6285788991122',
                 'hours' => 'Setiap Hari: 07.00 - 19.00 WIB',
                 'parts_stock' => 'Servis CVT, Karbu/Injeksi, Tambal Ban, Panggilan',
                 'rating' => 4.8,

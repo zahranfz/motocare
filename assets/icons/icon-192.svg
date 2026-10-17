@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <defs>
+    <linearGradient id="grad192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#C91823" />
+      <stop offset="100%" stop-color="#80060E" />
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="42" fill="url(#grad192)" />
+  <g transform="translate(24, 34) scale(0.56)">
+    <circle cx="60" cy="160" r="34" fill="none" stroke="#FEF8F3" stroke-width="14" />
+    <circle cx="60" cy="160" r="12" fill="#FEF8F3" />
+    <circle cx="196" cy="160" r="34" fill="none" stroke="#FEF8F3" stroke-width="14" />
+    <circle cx="196" cy="160" r="12" fill="#FEF8F3" />
+    <path d="M 60 160 L 105 105 L 140 105 L 180 145 M 105 105 L 125 155 L 196 160 M 130 90 L 145 65 L 175 65 M 120 70 L 100 85 L 75 85" 
+          fill="none" stroke="#FEF8F3" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 105 100 Q 130 85 155 105 Q 135 125 110 115 Z" fill="#FBDAD7" />
+  </g>
+  <text x="96" y="165" font-family="'Space Grotesk', system-ui, sans-serif" font-size="18" font-weight="900" fill="#FEF8F3" text-anchor="middle" letter-spacing="2">MOTOCARE</text>
+</svg>

@@ -8,10 +8,14 @@ const App = {
   state: {
     user: null,
     motor: null,
+    userMotors: [],
+    activeMotorId: null,
     components: [],
     summary: { merah: 0, kuning: 0, hijau: 0, total: 0 },
     historyRecords: [],
     historyMetrics: {},
+    resetNotaBase64: null,
+    manualNotaBase64: null,
     catalog: [],
     workshops: [],
     workshopLocation: { lat: -6.3728, lng: 106.8335 }, // Margonda Depok default
@@ -24,12 +28,48 @@ const App = {
     mapMarkers: [],
     userMarker: null,
     zoomLevel: 100,
+    deferredInstallPrompt: null,
   },
 
   init() {
     this.bindEvents();
     this.handleRoute();
     window.addEventListener('hashchange', () => this.handleRoute());
+    window.addEventListener('click', (e) => {
+      const garageContainer = document.getElementById('garage-dropdown-container');
+      const garageMenu = document.getElementById('garage-dropdown-menu');
+      if (garageContainer && garageMenu && !garageContainer.contains(e.target)) {
+        garageMenu.classList.add('hidden');
+      }
+    });
+
+    // PWA Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('MotoCare PWA ServiceWorker aktif:', reg.scope))
+          .catch(err => console.warn('PWA ServiceWorker error:', err));
+      });
+    }
+
+    // PWA Install Prompt Listener
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      this.state.deferredInstallPrompt = e;
+      const installBtn = document.getElementById('btn-pwa-install');
+      if (installBtn) {
+        installBtn.classList.remove('hidden');
+        installBtn.classList.add('flex');
+      }
+    });
+
+    window.addEventListener('appinstalled', () => {
+      this.state.deferredInstallPrompt = null;
+      const installBtn = document.getElementById('btn-pwa-install');
+      if (installBtn) installBtn.classList.add('hidden');
+      this.showToast('MotoCare Digital berhasil dipasang di perangkat Anda!', 'check_circle');
+    });
+
     this.loadCurrentUser().then(() => {
       this.refreshData();
     });
@@ -160,6 +200,8 @@ const App = {
     const res = await this.api('get_dashboard');
     if (res.success) {
       this.state.motor = res.motor;
+      this.state.userMotors = res.user_motors || [];
+      this.state.activeMotorId = res.active_motor_id;
       this.state.components = res.components || [];
       this.state.summary = res.summary || { merah: 0, kuning: 0, hijau: 0, total: 0 };
 
@@ -172,8 +214,80 @@ const App = {
   },
 
   // ====================================================
-  // DASHBOARD RENDERING
+  // DASHBOARD RENDERING & GARAGE SWITCHER
   // ====================================================
+  toggleGarageDropdown() {
+    const menu = document.getElementById('garage-dropdown-menu');
+    if (menu) menu.classList.toggle('hidden');
+  },
+
+  renderGarageDropdown() {
+    const list = document.getElementById('garage-dropdown-list');
+    const countBadge = document.getElementById('garage-motor-count-badge');
+    const motors = this.state.userMotors || [];
+    if (countBadge) countBadge.textContent = `${motors.length} Motor`;
+    if (!list) return;
+
+    if (motors.length === 0) {
+      list.innerHTML = `<div class="p-2 text-xs text-on-surface-variant text-center">Belum ada motor di garasi</div>`;
+      return;
+    }
+
+    list.innerHTML = motors.map(m => {
+      const isActive = m.is_active;
+      const c = m.counts || { merah: 0, kuning: 0, hijau: 0 };
+      let statusBadge = '<span class="text-[10px] text-secondary font-bold flex items-center gap-0.5"><span class="material-symbols-outlined text-xs">check_circle</span> Aman</span>';
+      if (c.merah > 0) {
+        statusBadge = `<span class="text-[10px] text-error font-bold flex items-center gap-0.5"><span class="material-symbols-outlined text-xs">error</span> ${c.merah} Servis</span>`;
+      } else if (c.kuning > 0) {
+        statusBadge = `<span class="text-[10px] text-tertiary font-bold flex items-center gap-0.5"><span class="material-symbols-outlined text-xs">warning</span> ${c.kuning} Perhatian</span>`;
+      }
+
+      return `
+        <div onclick="App.switchActiveMotor(${m.id})" class="p-2 rounded-lg cursor-pointer transition-colors flex items-center justify-between gap-2 ${isActive ? 'bg-primary/10 border border-primary/30' : 'hover:bg-surface-container border border-transparent'}">
+          <div class="flex items-center gap-2 overflow-hidden">
+            <div class="w-8 h-8 rounded-lg ${isActive ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant'} flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-sm">two_wheeler</span>
+            </div>
+            <div class="overflow-hidden">
+              <div class="text-xs font-bold text-on-surface truncate">${m.merek} ${m.tipe}</div>
+              <div class="text-[10px] font-mono text-on-surface-variant">${m.nomor_polisi || '-'} • ${Number(m.odometer_saat_ini).toLocaleString('id-ID')} km</div>
+            </div>
+          </div>
+          <div class="shrink-0 flex flex-col items-end">
+            ${statusBadge}
+            ${isActive ? '<span class="text-[9px] font-bold text-primary uppercase tracking-wider">Aktif</span>' : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  async switchActiveMotor(motorId) {
+    const menu = document.getElementById('garage-dropdown-menu');
+    if (menu) menu.classList.add('hidden');
+
+    this.showToast('Memuat data sepeda motor...', 'refresh');
+    const res = await this.api('switch_motor', 'POST', { motor_id: motorId });
+    if (res.success) {
+      await this.refreshData();
+      if (this.state.currentTab === 'riwayat-servis') {
+        await this.loadHistory();
+      } else if (this.state.currentTab === 'buku-servis') {
+        await this.renderPdfSheet();
+      }
+      this.showToast(res.message || 'Sepeda motor aktif berhasil diganti', 'check_circle');
+    } else {
+      this.showToast(res.error || 'Gagal mengganti sepeda motor', 'error');
+    }
+  },
+
+  openRegisterNewMotorModal() {
+    const menu = document.getElementById('garage-dropdown-menu');
+    if (menu) menu.classList.add('hidden');
+    this.switchTab('daftar-motor');
+  },
+
   renderEmptyBikeState() {
     const banner = document.getElementById('dashboard-hero-banner');
     if (banner) {
@@ -202,7 +316,14 @@ const App = {
     const comps = this.state.components;
     const sum = this.state.summary;
 
-    // 1. Update Header Odometer Pill
+    // 1. Update Header Bike Name and Garage Dropdown
+    const headerBikeName = document.getElementById('header-active-bike-name');
+    if (headerBikeName && m) {
+      headerBikeName.textContent = `${m.merek} ${m.tipe}`;
+    }
+    this.renderGarageDropdown();
+
+    // 2. Update Header Odometer Pill
     const headerOdo = document.getElementById('header-active-odometer');
     if (headerOdo && m) {
       headerOdo.textContent = `${Number(m.odometer_saat_ini).toLocaleString('id-ID')} km`;
@@ -245,9 +366,9 @@ const App = {
               </div>
             </div>
           </div>
-          <!-- Live Odometer Counter Card -->
-          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6 z-10 bg-surface-container-low p-4 md:p-5 rounded-xl border border-surface-container-high/60">
-            <div class="flex flex-col">
+          <!-- Live Odometer Counter Card & Actions -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-5 z-10 bg-surface-container-low p-4 md:p-5 rounded-xl border border-surface-container-high/60">
+            <div class="flex flex-col pr-1">
               <div class="flex items-center justify-between gap-2 mb-1">
                 <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Odometer Aktif</span>
                 <span class="bg-surface-container-highest text-on-surface-variant text-[10px] font-semibold px-1.5 py-0.5 rounded font-mono">LIVE WIB</span>
@@ -257,10 +378,16 @@ const App = {
                 <span class="font-title-md text-title-md text-on-surface-variant font-mono font-bold">km</span>
               </div>
             </div>
-            <button onclick="App.openOdoModal()" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary-container text-on-primary px-5 py-3 rounded-xl shadow-sm transition-all active:translate-y-0.5 font-label-lg text-label-lg font-semibold" type="button">
-              <span class="material-symbols-outlined text-lg">speed</span>
-              <span>Update Odometer</span>
-            </button>
+            <div class="flex flex-wrap sm:flex-nowrap items-center gap-2">
+              <button onclick="App.openOdoModal()" class="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 bg-primary hover:bg-primary-container text-on-primary px-4 py-2.5 rounded-xl shadow-xs transition-all active:translate-y-0.5 font-label-md text-label-md font-semibold cursor-pointer" type="button">
+                <span class="material-symbols-outlined text-base">speed</span>
+                <span>Update Odo</span>
+              </button>
+              <button onclick="App.shareWhatsAppReminder()" class="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 bg-[#25D366] hover:bg-[#1ebd5a] text-white px-3.5 py-2.5 rounded-xl shadow-xs transition-all active:translate-y-0.5 font-label-md text-label-md font-semibold cursor-pointer" type="button" title="Kirim ringkasan pengingat servis motor ke WhatsApp">
+                <span class="material-symbols-outlined text-base">chat</span>
+                <span>Kirim WA</span>
+              </button>
+            </div>
           </div>
         </div>
       `;
@@ -482,6 +609,7 @@ const App = {
     document.getElementById('reset-current-odo-val').textContent = `${Number(motor.odometer_saat_ini).toLocaleString('id-ID')} km`;
     document.getElementById('reset-odo-input').value = motor.odometer_saat_ini;
     document.getElementById('reset-date-input').value = new Date().toISOString().split('T')[0];
+    this.removeNotaPreview(null, 'reset-nota-file', 'reset-nota-preview', 'reset-nota-preview-container', 'reset-nota-placeholder', 'reset');
 
     modal.classList.remove('hidden');
     modal.classList.add('flex');
@@ -493,6 +621,7 @@ const App = {
       modal.classList.add('hidden');
       modal.classList.remove('flex');
     }
+    this.removeNotaPreview(null, 'reset-nota-file', 'reset-nota-preview', 'reset-nota-preview-container', 'reset-nota-placeholder', 'reset');
     this.state.activeResetPart = null;
   },
 
@@ -505,6 +634,7 @@ const App = {
     const bengkel = document.getElementById('reset-bengkel-input').value || 'AHASS 07123 Daya Motor Depok';
     const biaya = parseInt(document.getElementById('reset-biaya-input').value, 10) || 0;
     const catatan = document.getElementById('reset-catatan-input').value || 'Penggantian rutin berkala';
+    const fotoNota = this.state.resetNotaBase64 || null;
 
     if (isNaN(odo) || odo < 0) {
       this.showToast('Nilai odometer tidak valid', 'error');
@@ -518,6 +648,7 @@ const App = {
       bengkel,
       biaya,
       catatan,
+      foto_nota: fotoNota,
     });
 
     if (res.success) {
@@ -714,7 +845,7 @@ const App = {
       const m = L.marker([w.lat, w.lng], { icon: wIcon })
         .addTo(this.state.leafletMap)
         .bindPopup(`
-          <div class="p-1 space-y-1">
+          <div class="p-1 space-y-1.5 min-w-[200px]">
             <span class="font-bold text-xs uppercase px-1.5 py-0.5 rounded ${isResmi ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">${w.brand}</span>
             <h4 class="font-bold text-sm leading-tight text-gray-900 mt-1">${w.name}</h4>
             <p class="text-xs text-gray-600">${w.address}</p>
@@ -722,9 +853,14 @@ const App = {
               <span>Jarak: ${w.distance_text}</span>
               <span>⭐ ${w.rating}</span>
             </div>
-            <a href="https://www.google.com/maps/search/?api=1&query=${w.lat},${w.lng}" target="_blank" class="block text-center mt-2 bg-red-600 text-white py-1 px-2 rounded text-xs font-semibold">
-              Buka Google Maps
-            </a>
+            <div class="flex items-center gap-1.5 pt-1">
+              <a href="${this.getWorkshopWhatsAppLink(w)}" target="_blank" class="flex-1 text-center bg-[#25D366] hover:bg-[#1ebd5a] text-white py-1.5 px-2 rounded text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1">
+                <span class="material-symbols-outlined text-[14px]">chat</span> Booking WA
+              </a>
+              <a href="https://www.google.com/maps/search/?api=1&query=${w.lat},${w.lng}" target="_blank" class="flex-1 text-center bg-red-600 hover:bg-red-700 text-white py-1.5 px-2 rounded text-xs font-semibold transition-all">
+                Rute Maps
+              </a>
+            </div>
           </div>
         `);
 
@@ -784,14 +920,104 @@ const App = {
               <span class="bg-surface-container px-space-sm py-1 rounded font-mono font-bold text-on-surface text-label-md">
                 ${w.distance_text}
               </span>
-              <a href="https://www.google.com/maps/search/?api=1&query=${w.lat},${w.lng}" target="_blank" onclick="event.stopPropagation()" class="p-2 hover:bg-surface-container rounded-lg text-primary transition-colors" title="Buka Rute Navigasi">
-                <span class="material-symbols-outlined">directions</span>
-              </a>
+              <div class="flex items-center gap-1.5 mt-1">
+                <a href="${this.getWorkshopWhatsAppLink(w)}" target="_blank" onclick="event.stopPropagation()" class="px-2.5 py-1.5 bg-[#25D366] hover:bg-[#1ebd5a] text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs transition-all" title="Booking Servis via WhatsApp">
+                  <span class="material-symbols-outlined text-[15px]">chat</span>
+                  <span>Booking WA</span>
+                </a>
+                <a href="https://www.google.com/maps/search/?api=1&query=${w.lat},${w.lng}" target="_blank" onclick="event.stopPropagation()" class="p-1.5 hover:bg-surface-container rounded-lg text-primary border border-surface-container-high transition-colors" title="Buka Rute Navigasi Google Maps">
+                  <span class="material-symbols-outlined text-base">directions</span>
+                </a>
+              </div>
             </div>
           </div>
         </article>
       `;
     }).join('');
+  },
+
+  getWorkshopWhatsAppLink(w) {
+    const m = this.state.motor;
+    const comps = this.state.components || [];
+    const urgentComps = comps.filter(c => c.status_code === 'merah' || c.status_code === 'kuning');
+    let partList = urgentComps.map(c => `- ${c.nama_komponen} (${c.status_text})`).join('\n');
+    if (!partList) partList = '- Servis berkala rutin & ganti oli';
+
+    const bikeInfo = m ? `${m.merek} ${m.tipe} (${m.nomor_polisi || '-'}) • ${Number(m.odometer_saat_ini).toLocaleString('id-ID')} km` : 'Sepeda Motor';
+    const text = `Halo ${w.name}, saya ingin reservasi/booking jadwal servis motor melalui MotoCare Digital.\n\n` +
+      `🏍️ *Data Kendaraan:* ${bikeInfo}\n` +
+      `🛠️ *Rencana Penggantian/Servis:*\n${partList}\n\n` +
+      `Apakah besok tersedia slot mekanik? Terima kasih.`;
+
+    const phone = w.wa_phone || '6281298443321';
+    return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+  },
+
+  shareWhatsAppReminder() {
+    const m = this.state.motor;
+    if (!m) {
+      this.showToast('Data motor belum tersedia', 'error');
+      return;
+    }
+    const comps = this.state.components || [];
+    const merah = comps.filter(c => c.status_code === 'merah');
+    const kuning = comps.filter(c => c.status_code === 'kuning');
+    const hijau = comps.filter(c => c.status_code === 'hijau');
+
+    let msg = `🔔 *PENGINGAT SERVIS - MOTOCARE DIGITAL* 🛵\n` +
+      `Halo! Berikut ringkasan kesehatan & jadwal servis motor saya:\n\n` +
+      `🏍️ *Motor:* ${m.merek} ${m.tipe} ${m.varian ? `(${m.varian})` : ''}\n` +
+      `🔢 *Nomor Polisi:* ${m.nomor_polisi || '-'}\n` +
+      `📊 *Odometer:* ${Number(m.odometer_saat_ini).toLocaleString('id-ID')} km\n` +
+      `📅 *Dicatat pada:* ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}\n\n`;
+
+    if (merah.length > 0) {
+      msg += `🔴 *WAKTUNYA GANTI (MENDESAK):*\n`;
+      merah.forEach(c => {
+        const sisaKm = c.sisa_km !== null ? (c.sisa_km <= 0 ? `Terlambat ${Math.abs(c.sisa_km)} km` : `Sisa ${c.sisa_km} km`) : '';
+        const sisaHari = c.sisa_hari !== null ? (c.sisa_hari <= 0 ? `Terlambat ${Math.abs(c.sisa_hari)} hari` : `Sisa ${c.sisa_hari} hari`) : '';
+        const sisa = [sisaKm, sisaHari].filter(Boolean).join(' / ');
+        msg += `• ${c.nama_komponen} [${sisa}]\n  Kode Part OEM: ${c.kode_part || '-'}\n`;
+      });
+      msg += `\n`;
+    }
+
+    if (kuning.length > 0) {
+      msg += `🟡 *PERLU PERHATIAN (MENDEKATI JATUH TEMPO):*\n`;
+      kuning.forEach(c => {
+        const sisaKm = c.sisa_km !== null ? `Sisa ${c.sisa_km} km` : '';
+        const sisaHari = c.sisa_hari !== null ? `Sisa ${c.sisa_hari} hari` : '';
+        const sisa = [sisaKm, sisaHari].filter(Boolean).join(' / ');
+        msg += `• ${c.nama_komponen} [${sisa}]\n  Kode Part OEM: ${c.kode_part || '-'}\n`;
+      });
+      msg += `\n`;
+    }
+
+    if (hijau.length > 0) {
+      msg += `🟢 *KONDISI BAIK (${hijau.length} Komponen):*\n`;
+      msg += hijau.map(c => c.nama_komponen).slice(0, 4).join(', ') + (hijau.length > 4 ? ', dll.' : '') + `\n\n`;
+    }
+
+    msg += `💡 Dibuat otomatis melalui MotoCare Digital: ${window.location.origin}${window.location.pathname}`;
+
+    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+    window.open(waUrl, '_blank');
+    this.showToast('Membuka WhatsApp untuk berbagi pengingat...', 'check_circle');
+  },
+
+  async installPWA() {
+    if (!this.state.deferredInstallPrompt) {
+      this.showToast('Aplikasi sudah terpasang atau browser Anda belum mendukung instalasi otomatis.', 'info');
+      return;
+    }
+    this.state.deferredInstallPrompt.prompt();
+    const { outcome } = await this.state.deferredInstallPrompt.userChoice;
+    if (outcome === 'accepted') {
+      this.showToast('Memasang MotoCare Digital...', 'check_circle');
+    }
+    this.state.deferredInstallPrompt = null;
+    const installBtn = document.getElementById('btn-pwa-install');
+    if (installBtn) installBtn.classList.add('hidden');
   },
 
   focusWorkshop(lat, lng) {
@@ -860,19 +1086,23 @@ const App = {
   },
 
   renderHistory() {
-    const records = this.state.historyRecords;
-    const m = this.state.historyMetrics;
+    const records = this.state.historyRecords || [];
+    const m = this.state.historyMetrics || {};
 
-    // Update Telemetry Strip
+    // Update Telemetry & Cost Tracker Strip
     const totalServisEl = document.getElementById('hist-total-servis');
     const totalBiayaEl = document.getElementById('hist-total-biaya');
-    const firstOdoEl = document.getElementById('hist-first-odo');
+    const avgBiayaEl = document.getElementById('hist-avg-biaya');
+    const costPerKmEl = document.getElementById('hist-cost-per-km');
+    const receiptCountEl = document.getElementById('hist-receipt-count');
     const lastOdoEl = document.getElementById('hist-last-odo');
 
-    if (totalServisEl) totalServisEl.textContent = `${m.total_services || 0} Kali`;
+    if (totalServisEl) totalServisEl.textContent = `${m.total_services || 0} Kali Servis`;
     if (totalBiayaEl) totalBiayaEl.textContent = `Rp ${(m.total_cost || 0).toLocaleString('id-ID')}`;
-    if (firstOdoEl) firstOdoEl.textContent = `${(m.first_odo || 0).toLocaleString('id-ID')} km`;
-    if (lastOdoEl) lastOdoEl.textContent = `${(m.last_odo || 0).toLocaleString('id-ID')} km`;
+    if (avgBiayaEl) avgBiayaEl.textContent = `Rp ${(m.avg_cost || 0).toLocaleString('id-ID')}`;
+    if (costPerKmEl) costPerKmEl.textContent = `Rp ${(m.cost_per_km || 0).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} / km`;
+    if (receiptCountEl) receiptCountEl.textContent = `${records.filter(r => !!r.foto_nota).length} Terlampir`;
+    if (lastOdoEl) lastOdoEl.textContent = `${Number(m.last_odo || 0).toLocaleString('id-ID')} km`;
 
     // Filter controls
     const compFilter = document.getElementById('hist-filter-component') ? document.getElementById('hist-filter-component').value : 'all';
@@ -894,7 +1124,7 @@ const App = {
     if (filtered.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="7" class="p-space-xl text-center text-on-surface-variant font-body-md">
+          <td colspan="8" class="p-space-xl text-center text-on-surface-variant font-body-md">
             Belum ada riwayat penggantian servis yang tercatat.
           </td>
         </tr>
@@ -916,6 +1146,14 @@ const App = {
         </button>
       ` : '-';
 
+      // Receipt Nota Thumbnail / Button
+      const notaBtn = r.foto_nota ? `
+        <button onclick="App.openReceiptModal('${r.foto_nota}', '${r.nama_komponen.replace(/'/g, "\\'")}', '${(r.bengkel || '').replace(/'/g, "\\'")}', '${r.tanggal_ganti}', ${r.biaya || 0})" class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold shadow-xs transition-colors" title="Lihat Foto Bukti Nota / Kuitansi">
+          <span class="material-symbols-outlined text-sm">receipt_long</span>
+          <span>Lihat Nota</span>
+        </button>
+      ` : `<span class="text-on-surface-variant text-xs italic">-</span>`;
+
       return `
         <tr class="border-b border-surface-container-low hover:bg-surface-container-low/50 transition-colors ${isCancelled ? 'opacity-60 bg-surface-container-lowest/40' : ''}">
           <td class="p-space-md font-mono text-body-sm font-semibold text-on-surface">${this.formatDate(r.tanggal_ganti)}</td>
@@ -925,7 +1163,8 @@ const App = {
           </td>
           <td class="p-space-md font-mono text-body-sm text-on-surface">${Number(r.odometer_saat_ganti).toLocaleString('id-ID')} km</td>
           <td class="p-space-md text-body-sm text-on-surface-variant">${r.bengkel || '-'}</td>
-          <td class="p-space-md font-mono text-body-sm text-on-surface">Rp ${Number(r.biaya || 0).toLocaleString('id-ID')}</td>
+          <td class="p-space-md font-mono text-body-sm font-bold text-on-surface">Rp ${Number(r.biaya || 0).toLocaleString('id-ID')}</td>
+          <td class="p-space-md">${notaBtn}</td>
           <td class="p-space-md">${statusBadge}</td>
           <td class="p-space-md text-right">${cancelBtn}</td>
         </tr>
@@ -949,14 +1188,22 @@ const App = {
 
   // Manual service modal
   openManualServiceModal() {
-    const modal = document.getElementById('modal-manual-service');
-    if (!modal) return;
+    const motor = this.state.motor;
+    if (!motor) {
+      this.showToast('Daftarkan motor terlebih dahulu', 'error');
+      return;
+    }
     document.getElementById('manual-serv-date').value = new Date().toISOString().split('T')[0];
     if (this.state.motor) {
       document.getElementById('manual-serv-odo').value = this.state.motor.odometer_saat_ini;
     }
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
+    this.removeNotaPreview(null, 'manual-nota-file', 'manual-nota-preview', 'manual-nota-preview-container', 'manual-nota-placeholder', 'manual');
+
+    const modal = document.getElementById('modal-manual-service');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
   },
 
   closeManualServiceModal() {
@@ -965,6 +1212,7 @@ const App = {
       modal.classList.add('hidden');
       modal.classList.remove('flex');
     }
+    this.removeNotaPreview(null, 'manual-nota-file', 'manual-nota-preview', 'manual-nota-preview-container', 'manual-nota-placeholder', 'manual');
   },
 
   async submitManualService() {
@@ -978,6 +1226,7 @@ const App = {
     const bengkel = document.getElementById('manual-serv-bengkel').value;
     const biaya = parseInt(document.getElementById('manual-serv-cost').value, 10) || 0;
     const catatan = document.getElementById('manual-serv-notes').value;
+    const fotoNota = this.state.manualNotaBase64 || null;
 
     if (!nama || isNaN(odo) || odo <= 0) {
       this.showToast('Nama komponen dan odometer wajib diisi', 'error');
@@ -993,6 +1242,7 @@ const App = {
       bengkel,
       biaya,
       catatan,
+      foto_nota: fotoNota,
     });
 
     if (res.success) {
@@ -1001,6 +1251,92 @@ const App = {
       this.loadHistory();
     } else {
       this.showToast(res.error || 'Gagal menyimpan servis manual', 'error');
+    }
+  },
+
+  // ====================================================
+  // RECEIPT NOTA PREVIEW & FILE HANDLERS
+  // ====================================================
+  handleNotaFileSelect(event, previewId, containerId, placeholderId, mode) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      this.showToast('Hanya berkas gambar (JPG, PNG) yang diperbolehkan', 'error');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      this.showToast('Ukuran berkas maksimal 5 MB', 'error');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target.result;
+      const previewImg = document.getElementById(previewId);
+      const container = document.getElementById(containerId);
+      const placeholder = document.getElementById(placeholderId);
+
+      if (previewImg) previewImg.src = base64;
+      if (container) container.classList.remove('hidden');
+      if (placeholder) placeholder.classList.add('hidden');
+
+      if (mode === 'reset') {
+        this.state.resetNotaBase64 = base64;
+      } else if (mode === 'manual') {
+        this.state.manualNotaBase64 = base64;
+      }
+    };
+    reader.readAsDataURL(file);
+  },
+
+  removeNotaPreview(event, inputId, previewId, containerId, placeholderId, mode) {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    const input = document.getElementById(inputId);
+    const previewImg = document.getElementById(previewId);
+    const container = document.getElementById(containerId);
+    const placeholder = document.getElementById(placeholderId);
+
+    if (input) input.value = '';
+    if (previewImg) previewImg.src = '';
+    if (container) container.classList.add('hidden');
+    if (placeholder) placeholder.classList.remove('hidden');
+
+    if (mode === 'reset') {
+      this.state.resetNotaBase64 = null;
+    } else if (mode === 'manual') {
+      this.state.manualNotaBase64 = null;
+    }
+  },
+
+  openReceiptModal(url, component, workshop, date, cost) {
+    const modal = document.getElementById('modal-preview-nota');
+    if (!modal) return;
+    const img = document.getElementById('preview-nota-img');
+    const title = document.getElementById('preview-nota-title');
+    const subtitle = document.getElementById('preview-nota-subtitle');
+    const costEl = document.getElementById('preview-nota-cost');
+    const download = document.getElementById('preview-nota-download');
+
+    if (img) img.src = url;
+    if (title) title.textContent = component || 'Bukti Nota Servis';
+    if (subtitle) subtitle.textContent = `${workshop || 'Bengkel'} • ${this.formatDate(date)}`;
+    if (costEl) costEl.textContent = `Rp ${Number(cost || 0).toLocaleString('id-ID')}`;
+    if (download) download.href = url;
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  },
+
+  closeReceiptModal() {
+    const modal = document.getElementById('modal-preview-nota');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
     }
   },
 
