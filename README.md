@@ -1,4 +1,4 @@
-# MotoCare Digital 🛵
+# MotoCare Digital 
 **Motorcycle Maintenance Tracker & Smart Assistant**
 *Karya Tim Hore — Hackathon Inovasi Digital 2026*
 
