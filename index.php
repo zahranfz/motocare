@@ -1,3 +1,6 @@
+<?php
+// MotoCare Digital - Motorcycle Maintenance Tracker & Smart Assistant
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
