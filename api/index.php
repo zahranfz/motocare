@@ -138,10 +138,11 @@ function calculateComponentStatus($item, $currentOdo) {
     ];
 }
 
-$action = $_GET['action'] ?? $_POST['action'] ?? '';
-$input = getJsonInput();
+if (!defined('MOTOCARE_TEST_MODE')) {
+    $action = $_GET['action'] ?? $_POST['action'] ?? '';
+    $input = getJsonInput();
 
-switch ($action) {
+    switch ($action) {
 
     // ==========================================
     // AUTH & SESSION CONTROLLERS (FR-001 - FR-004)
@@ -1068,4 +1069,6 @@ switch ($action) {
             'time' => date('Y-m-d H:i:s T'),
         ]);
         break;
+    }
 }
+

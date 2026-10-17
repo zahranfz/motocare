@@ -17,6 +17,7 @@ const App = {
     workshopLocation: { lat: -6.3728, lng: 106.8335 }, // Margonda Depok default
     workshopRadius: 5,
     workshopFilter: 'all',
+    componentFilter: 'all',
     currentTab: 'dashboard',
     activeResetPart: null,
     leafletMap: null,
@@ -172,15 +173,15 @@ const App = {
     const banner = document.getElementById('dashboard-hero-banner');
     if (banner) {
       banner.innerHTML = `
-        <div class="bg-surface-container-lowest rounded-xl p-space-xl shadow-sm text-center flex flex-col items-center justify-center gap-space-md">
-          <div class="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+        <div class="bg-surface-container-lowest rounded-2xl p-8 shadow-sm border border-[#e4beba]/60 text-center flex flex-col items-center justify-center gap-space-md">
+          <div class="w-16 h-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
             <span class="material-symbols-outlined text-4xl">two_wheeler</span>
           </div>
           <h2 class="font-headline-md text-headline-md text-on-surface">Belum Ada Sepeda Motor Terdaftar</h2>
           <p class="font-body-md text-body-md text-on-surface-variant max-w-md">
             Daftarkan sepeda motor Anda sekarang untuk mulai memantau masa pakai komponen dan jadwal perawatan berkala.
           </p>
-          <button onclick="App.switchTab('daftar-motor')" class="bg-primary hover:bg-primary-container text-on-primary px-space-lg py-3 rounded-lg shadow-sm font-label-lg font-semibold flex items-center gap-2">
+          <button onclick="App.switchTab('daftar-motor')" class="bg-primary hover:bg-primary-container text-on-primary px-space-lg py-3 rounded-xl shadow-sm font-label-lg font-semibold flex items-center gap-2">
             <span class="material-symbols-outlined">add_circle</span>
             <span>Daftarkan Motor Pertama</span>
           </button>
@@ -218,23 +219,24 @@ const App = {
     const banner = document.getElementById('dashboard-hero-banner');
     if (banner && m) {
       banner.innerHTML = `
-        <div class="bg-surface-container-lowest rounded-xl p-space-lg lg:p-space-xl shadow-sm relative overflow-hidden flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-space-lg">
+        <div class="bg-surface-container-lowest rounded-2xl p-6 md:p-8 shadow-sm border border-[#e4beba]/60 relative overflow-hidden flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6">
           <div class="absolute -right-12 -top-12 opacity-5 pointer-events-none select-none text-on-surface">
             <span class="material-symbols-outlined text-[240px]">settings_suggest</span>
           </div>
-          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-space-lg z-10">
-            <div class="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 shadow-sm">
+          <!-- Vehicle Identity Section -->
+          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6 z-10">
+            <div class="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0 shadow-sm border border-primary/15">
               <span class="material-symbols-outlined text-[36px]">two_wheeler</span>
             </div>
             <div class="flex flex-col">
-              <div class="flex flex-wrap items-center gap-space-sm mb-space-xs">
-                <span class="font-headline-md text-headline-md text-on-surface tracking-tight">${m.merek} ${m.tipe} ${m.varian ? `(${m.varian})` : ''}</span>
-                <span class="bg-surface-container text-on-surface font-mono font-semibold px-space-sm py-0.5 rounded text-label-sm tracking-wider">${m.nomor_polisi || '-'}</span>
-                <span class="bg-secondary-container/40 text-on-secondary-container px-space-xs py-0.5 rounded font-label-sm text-label-sm font-semibold flex items-center gap-1">
+              <div class="flex flex-wrap items-center gap-2.5 mb-1.5">
+                <h1 class="font-headline-md text-headline-md text-on-surface tracking-tight font-bold">${m.merek} ${m.tipe} ${m.varian ? `(${m.varian})` : ''}</h1>
+                <span class="bg-surface-container text-on-surface font-mono font-semibold px-2.5 py-0.5 rounded text-label-sm tracking-wider border border-surface-container-high">${m.nomor_polisi || '-'}</span>
+                <span class="bg-secondary-container/40 text-on-secondary-container px-2 py-0.5 rounded font-label-sm text-label-sm font-semibold flex items-center gap-1">
                   <span class="material-symbols-outlined text-sm">verified</span> Terverifikasi
                 </span>
               </div>
-              <div class="flex flex-wrap items-center gap-x-space-md gap-y-space-xs text-on-surface-variant font-body-sm text-body-sm">
+              <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-on-surface-variant font-body-sm text-body-sm">
                 <span class="flex items-center gap-1">
                   <span class="material-symbols-outlined text-sm">event_repeat</span> Pendaftaran: ${this.formatDate(m.created_at)}
                 </span>
@@ -251,18 +253,18 @@ const App = {
             </div>
           </div>
           <!-- Live Odometer Counter Card -->
-          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-space-lg z-10 bg-surface-container-low p-space-md rounded-xl">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6 z-10 bg-surface-container-low p-4 md:p-5 rounded-xl border border-surface-container-high/60">
             <div class="flex flex-col">
-              <div class="flex items-center justify-between gap-space-sm mb-1">
-                <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Odometer Aktif</span>
-                <span class="bg-surface-container-highest text-on-surface-variant text-[10px] font-semibold px-1.5 py-0.2 rounded font-mono">LIVE WIB</span>
+              <div class="flex items-center justify-between gap-2 mb-1">
+                <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Odometer Aktif</span>
+                <span class="bg-surface-container-highest text-on-surface-variant text-[10px] font-semibold px-1.5 py-0.5 rounded font-mono">LIVE WIB</span>
               </div>
-              <div class="flex items-baseline gap-1">
+              <div class="flex items-baseline gap-1.5">
                 <span class="font-telemetry-num text-telemetry-num font-mono text-on-surface tracking-tight" id="heroOdometerVal">${Number(m.odometer_saat_ini).toLocaleString('id-ID')}</span>
-                <span class="font-title-md text-title-md text-on-surface-variant font-mono">km</span>
+                <span class="font-title-md text-title-md text-on-surface-variant font-mono font-bold">km</span>
               </div>
             </div>
-            <button onclick="App.openOdoModal()" class="w-full sm:w-auto flex items-center justify-center gap-space-xs bg-primary hover:bg-primary-container text-on-primary px-space-md py-3 rounded-lg shadow-sm transition-all active:translate-y-0.5 font-label-lg text-label-lg" type="button">
+            <button onclick="App.openOdoModal()" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary-container text-on-primary px-5 py-3 rounded-xl shadow-sm transition-all active:translate-y-0.5 font-label-lg text-label-lg font-semibold" type="button">
               <span class="material-symbols-outlined text-lg">speed</span>
               <span>Update Odometer</span>
             </button>
@@ -271,7 +273,7 @@ const App = {
       `;
     }
 
-    // 4. Update Status KPI Banner
+    // 4. Update Status KPI Banner counts
     const kpiMerah = document.getElementById('kpi-merah-count');
     const kpiKuning = document.getElementById('kpi-kuning-count');
     const kpiHijau = document.getElementById('kpi-hijau-count');
@@ -279,8 +281,48 @@ const App = {
     if (kpiKuning) kpiKuning.textContent = sum.kuning;
     if (kpiHijau) kpiHijau.textContent = sum.hijau;
 
-    // 5. Render Component Cards Grid
-    this.renderComponentCards(comps);
+    // Update Filter Toolbar counts
+    const filterAll = document.getElementById('filter-count-all');
+    const filterMerah = document.getElementById('filter-count-merah');
+    const filterKuning = document.getElementById('filter-count-kuning');
+    const filterHijau = document.getElementById('filter-count-hijau');
+    if (filterAll) filterAll.textContent = sum.total;
+    if (filterMerah) filterMerah.textContent = sum.merah;
+    if (filterKuning) filterKuning.textContent = sum.kuning;
+    if (filterHijau) filterHijau.textContent = sum.hijau;
+
+    // 5. Render Component Cards with Active Filter
+    const activeFilter = this.state.componentFilter || 'all';
+    this.filterComponentCards(activeFilter, false);
+  },
+
+  filterComponentCards(statusCode = 'all', reRender = true) {
+    this.state.componentFilter = statusCode;
+
+    // Update filter pills active state
+    document.querySelectorAll('.filter-pill').forEach(btn => {
+      if (btn.getAttribute('data-filter') === statusCode) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+
+    // Update KPI card active border
+    document.querySelectorAll('.kpi-card').forEach(card => {
+      if (card.getAttribute('data-kpi-filter') === statusCode) {
+        card.classList.add('active-filter');
+      } else {
+        card.classList.remove('active-filter');
+      }
+    });
+
+    const comps = this.state.components || [];
+    let filtered = comps;
+    if (statusCode !== 'all') {
+      filtered = comps.filter(c => c.status_code === statusCode);
+    }
+    this.renderComponentCards(filtered);
   },
 
   renderComponentCards(components) {
@@ -289,8 +331,14 @@ const App = {
 
     if (!components || components.length === 0) {
       grid.innerHTML = `
-        <div class="col-span-full bg-surface-container-lowest p-space-xl rounded-xl text-center text-on-surface-variant">
-          Belum ada komponen yang dikonfigurasi untuk sepeda motor ini.
+        <div class="col-span-full bg-surface-container-lowest p-space-xl rounded-2xl border border-[#e4beba]/40 text-center text-on-surface-variant">
+          <div class="w-12 h-12 rounded-full bg-surface-container mx-auto flex items-center justify-center text-on-surface-variant mb-2">
+            <span class="material-symbols-outlined text-2xl">filter_list_off</span>
+          </div>
+          <p class="font-title-md text-title-md font-semibold text-on-surface">Tidak ada komponen untuk filter ini</p>
+          <button onclick="App.filterComponentCards('all')" class="mt-3 px-4 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface text-label-md font-semibold">
+            Tampilkan Semua Komponen
+          </button>
         </div>
       `;
       return;
@@ -300,50 +348,75 @@ const App = {
       // Border color and badge styling according to status
       let borderColor = '#016d38'; // green
       let badgeBg = 'bg-secondary-container/40 text-on-secondary-container';
-      let iconColor = 'text-secondary';
       let progressColor = 'bg-secondary';
       let cardBgGradient = '';
+      let secondaryBtn = `
+        <button onclick="App.switchTab('peta-bengkel')" title="Cari bengkel terdekat" class="h-10 px-3.5 flex items-center justify-center gap-1.5 bg-surface-container-low hover:bg-surface-container-high text-on-surface-variant rounded-lg font-label-md text-label-md transition-colors" type="button">
+          <span class="material-symbols-outlined text-primary text-base">near_me</span>
+          <span class="hidden sm:inline">Bengkel</span>
+        </button>
+      `;
 
       if (c.status_code === 'merah') {
         borderColor = '#af101a'; // red
         badgeBg = 'bg-error-container text-on-error-container';
-        iconColor = 'text-error';
         progressColor = 'bg-primary';
-        cardBgGradient = 'bg-gradient-to-r from-primary/[0.02] to-transparent';
+        cardBgGradient = 'bg-gradient-to-r from-primary/[0.03] to-transparent';
+        secondaryBtn = `
+          <button onclick="App.switchTab('peta-bengkel')" title="Cari bengkel resmi terdekat untuk ganti ${c.nama_komponen}" class="h-10 px-3.5 flex items-center justify-center gap-1.5 bg-surface-container-high hover:bg-surface-container-highest text-primary border border-primary/20 rounded-lg font-label-md text-label-md font-semibold transition-colors" type="button">
+            <span class="material-symbols-outlined text-base">near_me</span>
+            <span class="hidden sm:inline">Bengkel</span>
+          </button>
+        `;
       } else if (c.status_code === 'kuning') {
         borderColor = '#864700'; // amber
         badgeBg = 'bg-tertiary-fixed text-on-tertiary-fixed';
-        iconColor = 'text-tertiary';
         progressColor = 'bg-tertiary';
-        cardBgGradient = 'bg-gradient-to-r from-tertiary/[0.02] to-transparent';
+        cardBgGradient = 'bg-gradient-to-r from-tertiary/[0.03] to-transparent';
+        secondaryBtn = `
+          <button onclick="App.switchTab('peta-bengkel')" title="Cari bengkel resmi terdekat untuk ganti ${c.nama_komponen}" class="h-10 px-3.5 flex items-center justify-center gap-1.5 bg-surface-container-high hover:bg-surface-container-highest text-primary border border-primary/20 rounded-lg font-label-md text-label-md font-semibold transition-colors" type="button">
+            <span class="material-symbols-outlined text-base">near_me</span>
+            <span class="hidden sm:inline">Bengkel</span>
+          </button>
+        `;
       }
 
       // Sisa km formatting
       let sisaKmDisplay = `${Number(c.sisa_km).toLocaleString('id-ID')} km tersisa`;
+      let sisaKmClass = 'text-on-surface';
       if (c.sisa_km !== null && c.sisa_km < 0) {
-        sisaKmDisplay = `<span class="text-error font-bold font-mono">${Math.abs(c.sisa_km).toLocaleString('id-ID')} km melebihi batas</span>`;
+        sisaKmDisplay = `${Math.abs(c.sisa_km).toLocaleString('id-ID')} km melebihi batas`;
+        sisaKmClass = 'text-error font-bold font-mono';
       } else if (c.sisa_km === 0) {
-        sisaKmDisplay = `<span class="text-error font-bold font-mono">Batas 0 km tercapai</span>`;
+        sisaKmDisplay = `Batas 0 km tercapai`;
+        sisaKmClass = 'text-error font-bold font-mono';
+      } else if (c.status_code === 'kuning') {
+        sisaKmClass = 'text-tertiary font-bold font-mono';
       }
 
       // Sisa hari formatting
       let sisaHariDisplay = `${c.sisa_hari} hari tersisa`;
+      let sisaHariClass = 'text-on-surface';
       if (c.sisa_hari !== null && c.sisa_hari < 0) {
-        sisaHariDisplay = `<span class="text-error font-semibold font-mono">Terlambat ${Math.abs(c.sisa_hari)} hari</span>`;
+        sisaHariDisplay = `Terlambat ${Math.abs(c.sisa_hari)} hari`;
+        sisaHariClass = 'text-error font-semibold font-mono';
       } else if (c.sisa_hari === 0) {
-        sisaHariDisplay = `<span class="text-error font-semibold font-mono">Hari ini jatuh tempo</span>`;
+        sisaHariDisplay = `Hari ini jatuh tempo`;
+        sisaHariClass = 'text-error font-semibold font-mono';
       }
 
+      const cappedWear = Math.min(100, Math.max(0, c.wear_percent || 0));
+
       return `
-        <div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm border border-[#e4beba]/40 relative overflow-hidden flex flex-col justify-between gap-space-md transition-all hover:shadow-md ${cardBgGradient}">
-          <!-- 4px Left Status Perimeter Strip (Tactile Precision) -->
+        <div class="component-card-tactile p-5 md:p-6 relative overflow-hidden flex flex-col justify-between gap-5 transition-all hover:shadow-lg ${cardBgGradient}">
+          <!-- Left Status Perimeter Strip (Tactile Precision) -->
           <div class="absolute left-0 top-0 bottom-0 w-1.5" style="background-color: ${borderColor};"></div>
 
-          <div class="space-y-space-sm pl-1">
+          <div class="space-y-4 pl-1">
             <!-- Header: Title & Status Badge -->
-            <div class="flex items-start justify-between gap-space-xs">
-              <div class="space-y-0.5">
-                <h3 class="font-title-lg text-title-lg text-on-surface font-bold leading-snug">${c.nama_komponen}</h3>
+            <div class="flex items-start justify-between gap-2">
+              <div class="space-y-1 min-h-[46px] flex flex-col justify-center">
+                <h3 class="font-title-lg text-title-lg text-on-surface font-bold leading-snug line-clamp-2">${c.nama_komponen}</h3>
                 <div class="flex items-center gap-1.5 flex-wrap">
                   <span class="font-mono text-label-sm text-on-surface-variant font-semibold">Part: ${c.kode_part || 'Belum tersedia'}</span>
                   ${c.kode_part ? `
@@ -353,50 +426,45 @@ const App = {
                   ` : ''}
                 </div>
               </div>
-              <span class="shrink-0 px-space-xs py-1 rounded-full font-label-sm text-label-sm font-semibold flex items-center gap-1 ${badgeBg}">
+              <span class="shrink-0 px-2.5 py-1 rounded-full font-label-sm text-label-sm font-semibold flex items-center gap-1 ${badgeBg}">
                 <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">${c.status_icon}</span>
                 <span>${c.status_text}</span>
               </span>
             </div>
 
             <!-- Wear Percentage Progress Bar -->
-            <div class="space-y-1 pt-1">
+            <div class="space-y-1.5">
               <div class="flex justify-between items-center text-body-sm font-body-sm text-on-surface-variant">
                 <span>Tingkat Keausan</span>
                 <span class="font-mono font-bold ${c.status_code === 'merah' ? 'text-primary' : 'text-on-surface'}">${c.wear_percent}%</span>
               </div>
-              <div class="w-full h-2 rounded-full bg-surface-container overflow-hidden">
-                <div class="h-full rounded-full transition-all duration-500 ${progressColor}" style="width: ${c.wear_percent}%;"></div>
+              <div class="w-full h-2 rounded-full bg-surface-container-high overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-500 ${progressColor}" style="width: ${cappedWear}%;"></div>
               </div>
             </div>
 
             <!-- Telemetry Metrics Grid -->
-            <div class="grid grid-cols-2 gap-space-xs bg-surface-container-low p-space-sm rounded-lg font-mono text-body-sm text-on-surface">
+            <div class="grid grid-cols-2 gap-3 bg-surface-container-low/90 p-3.5 rounded-xl border border-surface-container-high/50 font-mono text-body-sm text-on-surface">
               <div class="flex flex-col">
-                <span class="text-[11px] font-sans text-on-surface-variant uppercase tracking-wider">Jarak Tempuh</span>
-                <span class="font-semibold text-[13px]">${sisaKmDisplay}</span>
+                <span class="text-[11px] font-sans text-on-surface-variant uppercase tracking-wider font-semibold">Jarak Tempuh</span>
+                <span class="font-semibold text-[13px] ${sisaKmClass} flex items-center min-h-[22px]">${sisaKmDisplay}</span>
                 <span class="text-[10px] text-on-surface-variant">Interval: ${c.interval_km ? Number(c.interval_km).toLocaleString('id-ID') + ' km' : '-'}</span>
               </div>
-              <div class="flex flex-col border-l border-surface-container-high pl-space-xs">
-                <span class="text-[11px] font-sans text-on-surface-variant uppercase tracking-wider">Batas Waktu</span>
-                <span class="font-semibold text-[13px]">${sisaHariDisplay}</span>
+              <div class="flex flex-col border-l border-surface-container-high pl-3">
+                <span class="text-[11px] font-sans text-on-surface-variant uppercase tracking-wider font-semibold">Batas Waktu</span>
+                <span class="font-semibold text-[13px] ${sisaHariClass} flex items-center min-h-[22px]">${sisaHariDisplay}</span>
                 <span class="text-[10px] text-on-surface-variant">Interval: ${c.interval_bulan ? c.interval_bulan + ' bln' : '-'}</span>
               </div>
             </div>
           </div>
 
           <!-- Action Buttons -->
-          <div class="flex items-center gap-space-xs pt-space-xs border-t border-surface-container-low pl-1">
-            <button onclick="App.openResetModal(${c.id})" class="flex-1 flex items-center justify-center gap-1.5 bg-primary hover:bg-primary-container text-on-primary py-2.5 px-space-md rounded-lg shadow-sm font-label-md text-label-md font-semibold transition-all active:translate-y-0.5" type="button">
+          <div class="flex items-center gap-2 pt-2 border-t border-surface-container-high/40 pl-1">
+            <button onclick="App.openResetModal(${c.id})" class="flex-1 h-10 flex items-center justify-center gap-1.5 bg-primary hover:bg-primary-container text-on-primary rounded-lg shadow-sm font-label-md text-label-md font-semibold transition-all active:translate-y-0.5" type="button">
               <span class="material-symbols-outlined text-base">check</span>
               <span>Sudah Diganti</span>
             </button>
-            ${(c.status_code === 'merah' || c.status_code === 'kuning') ? `
-              <button onclick="App.switchTab('peta-bengkel')" title="Cari bengkel terdekat untuk suku cadang ini" class="flex items-center justify-center gap-1 bg-surface-container-low hover:bg-surface-container-high text-on-surface py-2.5 px-space-sm rounded-lg font-label-md text-label-md transition-colors" type="button">
-                <span class="material-symbols-outlined text-primary text-base">near_me</span>
-                <span class="hidden sm:inline">Bengkel</span>
-              </button>
-            ` : ''}
+            ${secondaryBtn}
           </div>
         </div>
       `;
@@ -1276,13 +1344,14 @@ const App = {
   },
 
   // ====================================================
-  // AUTH & USER SWITCHER (DEMO PURPOSE)
+  // AUTH & USER SWITCHER (FR-001 - FR-004)
   // ====================================================
   openUserSwitcher() {
     const modal = document.getElementById('modal-user-switcher');
     if (modal) {
       modal.classList.remove('hidden');
       modal.classList.add('flex');
+      this.switchAuthModalTab('demo');
     }
   },
 
@@ -1292,6 +1361,23 @@ const App = {
       modal.classList.add('hidden');
       modal.classList.remove('flex');
     }
+  },
+
+  switchAuthModalTab(tab) {
+    const tabs = ['demo', 'login', 'register'];
+    tabs.forEach(t => {
+      const btn = document.getElementById(`auth-tab-${t}`);
+      const panel = document.getElementById(`auth-panel-${t}`);
+      if (btn && panel) {
+        if (t === tab) {
+          btn.className = "flex-1 py-2.5 text-center border-b-2 border-primary text-primary font-bold transition-all";
+          panel.classList.remove('hidden');
+        } else {
+          btn.className = "flex-1 py-2.5 text-center text-on-surface-variant hover:text-on-surface transition-all";
+          panel.classList.add('hidden');
+        }
+      }
+    });
   },
 
   async switchAccount(email) {
@@ -1306,6 +1392,52 @@ const App = {
     } else {
       this.showToast(res.error, 'error');
     }
+  },
+
+  async submitLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+
+    const res = await this.api('login', 'POST', { email, password });
+    if (res.success) {
+      this.closeUserSwitcher();
+      this.state.user = res.user;
+      this.updateUserUI();
+      this.showToast(`Selamat datang, ${res.user.nama}!`, 'login');
+      await this.refreshData();
+      this.switchTab('dashboard');
+    } else {
+      this.showToast(res.error || 'Login gagal', 'error');
+    }
+  },
+
+  async submitRegister() {
+    const nama = document.getElementById('reg-user-nama').value.trim();
+    const email = document.getElementById('reg-user-email').value.trim();
+    const password = document.getElementById('reg-user-password').value;
+
+    const res = await this.api('register', 'POST', { nama, email, password });
+    if (res.success) {
+      this.closeUserSwitcher();
+      this.state.user = res.user;
+      this.updateUserUI();
+      this.showToast('Akun berhasil dibuat! Silakan daftarkan motor Anda.', 'check_circle');
+      await this.refreshData();
+      this.switchTab('daftar-motor');
+    } else {
+      this.showToast(res.error || 'Pendaftaran akun gagal', 'error');
+    }
+  },
+
+  async logout() {
+    const res = await this.api('logout', 'POST');
+    this.closeUserSwitcher();
+    this.showToast('Sesi telah diakhiri (Logout)', 'logout');
+    // Switch to Dimas or show empty
+    this.state.user = null;
+    this.state.motor = null;
+    this.state.components = [];
+    this.openUserSwitcher();
   },
 
   // ====================================================

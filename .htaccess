@@ -1,0 +1,12 @@
+# MotoCare Digital - Apache Configuration
+
+DirectoryIndex index.php
+
+# Protect SQLite database from direct browser downloads
+<Files ~ "\.(db|sqlite|sql)$">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Character encoding & MIME types
+AddDefaultCharset UTF-8

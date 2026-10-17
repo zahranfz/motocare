@@ -10,6 +10,97 @@
   }
 }
 
+/* Typography Tokens from DESIGN.md */
+.font-headline-xl, .text-headline-xl {
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: 40px !important;
+  line-height: 48px !important;
+  letter-spacing: -0.02em !important;
+  font-weight: 700 !important;
+}
+
+.font-headline-lg, .text-headline-lg {
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: 32px !important;
+  line-height: 40px !important;
+  letter-spacing: -0.015em !important;
+  font-weight: 600 !important;
+}
+
+.font-headline-md, .text-headline-md {
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: 22px !important;
+  line-height: 28px !important;
+  font-weight: 600 !important;
+}
+
+.font-title-lg, .text-title-lg {
+  font-family: 'Hanken Grotesk', sans-serif !important;
+  font-size: 18px !important;
+  line-height: 24px !important;
+  font-weight: 600 !important;
+}
+
+.font-title-md, .text-title-md {
+  font-family: 'Hanken Grotesk', sans-serif !important;
+  font-size: 16px !important;
+  line-height: 22px !important;
+  font-weight: 600 !important;
+}
+
+.font-telemetry-num, .text-telemetry-num {
+  font-family: 'Space Grotesk', monospace !important;
+  font-size: 28px !important;
+  line-height: 32px !important;
+  letter-spacing: -0.03em !important;
+  font-weight: 700 !important;
+}
+
+.font-label-lg, .text-label-lg {
+  font-family: 'Hanken Grotesk', sans-serif !important;
+  font-size: 14px !important;
+  line-height: 18px !important;
+  letter-spacing: 0.02em !important;
+  font-weight: 600 !important;
+}
+
+.font-label-md, .text-label-md {
+  font-family: 'Hanken Grotesk', sans-serif !important;
+  font-size: 12px !important;
+  line-height: 16px !important;
+  letter-spacing: 0.04em !important;
+  font-weight: 600 !important;
+}
+
+.font-label-sm, .text-label-sm {
+  font-family: 'Hanken Grotesk', sans-serif !important;
+  font-size: 11px !important;
+  line-height: 14px !important;
+  letter-spacing: 0.06em !important;
+  font-weight: 600 !important;
+}
+
+.font-body-lg, .text-body-lg {
+  font-family: 'Hanken Grotesk', sans-serif !important;
+  font-size: 16px !important;
+  line-height: 24px !important;
+  font-weight: 400 !important;
+}
+
+.font-body-md, .text-body-md {
+  font-family: 'Hanken Grotesk', sans-serif !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
+  font-weight: 400 !important;
+}
+
+.font-body-sm, .text-body-sm {
+  font-family: 'Hanken Grotesk', sans-serif !important;
+  font-size: 12px !important;
+  line-height: 16px !important;
+  font-weight: 400 !important;
+}
+
 /* Custom Scrollbar for tactile mechanical look */
 ::-webkit-scrollbar {
   width: 6px;
@@ -44,6 +135,60 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Tactile Elevation & Cards */
+.component-card-tactile {
+  background: #ffffff;
+  border: 1px solid #e4beba;
+  box-shadow: 0 1px 3px rgba(30, 37, 43, 0.05);
+  border-radius: 1rem;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+.component-card-tactile:hover {
+  box-shadow: 0 8px 24px -4px rgba(30, 37, 43, 0.1);
+  border-color: #8f6f6c;
+  transform: translateY(-3px);
+}
+
+/* KPI Card Interactive Status Filter */
+.kpi-card {
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(228, 190, 186, 0.4);
+}
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px -2px rgba(30, 37, 43, 0.08);
+}
+.kpi-card.active-filter {
+  box-shadow: 0 0 0 2px #af101a, 0 8px 24px -2px rgba(175, 16, 26, 0.15);
+  border-color: #af101a !important;
+}
+
+/* Filter Pill Controls */
+.filter-pill {
+  transition: all 0.2s ease;
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid rgba(228, 190, 186, 0.5);
+  background: #ffffff;
+  color: #5b403d;
+}
+.filter-pill:hover {
+  background: #f8f3ee;
+  color: #1d1b19;
+}
+.filter-pill.active {
+  background: #af101a !important;
+  color: #ffffff !important;
+  border-color: #af101a !important;
+  box-shadow: 0 2px 8px rgba(175, 16, 26, 0.25);
 }
 
 /* Status indicator pulse */

@@ -1,0 +1,32 @@
+# MotoCare Digital - Git Ignore
+
+# Local SQLite databases & data files
+data/*.db
+data/*.sqlite
+data/*.db-journal
+
+# Temporary PDF downloads & exports
+*.pdf
+Buku_Servis_MotoCare_*.pdf
+
+# Environment & local flags
+.env
+.env.local
+use_mysql.flag
+
+# Logs
+*.log
+error_log
+
+# OS & Editor generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*~
+
+# Temporary cache
+tmp/
+temp/
