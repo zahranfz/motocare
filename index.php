@@ -341,7 +341,7 @@
             <div>
               <h2 class="font-headline-md text-headline-md text-on-surface tracking-tight">Status Komponen Berkala</h2>
               <p class="font-body-sm text-body-sm text-on-surface-variant">
-                Urutan prioritas otomatis: <strong>Merah → Kuning → Hijau</strong> (Sesuai ketentuan FR-023 &amp; BR-001 – BR-007)
+                Urutan prioritas otomatis: <strong>Merah → Kuning → Hijau</strong> berdasarkan sisa jarak tempuh dan batas waktu.
               </p>
             </div>
             <div class="flex items-center gap-space-sm flex-wrap">
@@ -719,12 +719,12 @@
           <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md bg-surface-container-low p-space-md md:p-space-lg rounded-xl shadow-sm border border-surface-container-high">
             <div class="space-y-space-xs">
               <div class="flex items-center gap-space-xs">
-                <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary-container text-on-primary-container text-label-sm font-bold">FR</span>
-                <span class="font-label-sm text-label-sm uppercase tracking-wider text-primary font-bold">Smart Nearest Workshop Finder</span>
+                <span class="material-symbols-outlined text-primary text-xl">near_me</span>
+                <span class="font-label-sm text-label-sm uppercase tracking-wider text-primary font-bold">Pencari Bengkel Terdekat</span>
               </div>
               <h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Cari Bengkel Motor Terdekat</h1>
               <p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">
-                Menemukan bengkel resmi AHASS/Yamaha dan bengkel umum terverifikasi di sekitar lokasi Anda (Peta Leaflet &amp; OpenStreetMap, BR-012, BR-013).
+                Menemukan bengkel resmi (AHASS, Yamaha) dan bengkel umum terverifikasi di sekitar lokasi Anda.
               </p>
             </div>
 
@@ -758,8 +758,8 @@
                 </div>
               </div>
 
-              <!-- Geolocation request button (FR-040, FR-045) -->
-              <button onclick="App.requestUserLocation()" title="Gunakan Lokasi GPS Saya (FR-040)" class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant hover:text-primary transition-colors" type="button">
+              <!-- Geolocation request button -->
+              <button onclick="App.requestUserLocation()" title="Gunakan Lokasi GPS Saya" class="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant hover:text-primary transition-colors" type="button">
                 <span class="material-symbols-outlined text-[20px]">my_location</span>
               </button>
             </div>
@@ -786,7 +786,7 @@
             </div>
             <div class="flex items-center gap-space-xs text-on-surface-variant font-label-sm text-label-sm">
               <span class="material-symbols-outlined text-[16px] text-secondary">verified_user</span>
-              <span>Klik pada peta untuk memilih lokasi pencarian manual (FR-045)</span>
+              <span>Klik pada peta untuk memilih lokasi pencarian manual</span>
             </div>
           </div>
         </div>
@@ -850,7 +850,7 @@
               Riwayat Servis &amp; Suku Cadang
             </h1>
             <p class="font-body-md text-body-md text-on-surface-variant">
-              Daftar lengkap log pemeliharaan komponen sepeda motor Anda. Sesuai ketentuan <strong>BR-016 &amp; BR-017</strong>, catatan tersimpan permanen dan pembatalan hanya berlaku dalam 24 jam untuk penggantian terakhir.
+              Daftar lengkap log pemeliharaan komponen sepeda motor Anda. Catatan tersimpan permanen dan pembatalan hanya berlaku dalam 24 jam untuk penggantian terakhir.
             </p>
           </div>
           <div class="flex items-center flex-wrap gap-space-sm">
@@ -914,7 +914,7 @@
               </div>
               <div class="flex items-center gap-1 bg-secondary-container/40 text-on-secondary-container px-space-xs py-1 rounded-full text-label-sm font-semibold">
                 <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">verified</span>
-                <span>Standar PRD</span>
+                <span>Standar Pabrikan</span>
               </div>
             </div>
             <div class="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant pt-space-xs pl-1">
@@ -979,7 +979,7 @@
           <div class="flex flex-col">
             <div class="flex items-center gap-space-xs text-on-surface-variant font-label-sm text-label-sm uppercase tracking-widest">
               <span class="material-symbols-outlined text-primary text-title-md">verified</span>
-              <span>Buku Servis Elektronik • Modul Ekspor Resmi (FR-050 - FR-053)</span>
+              <span>Buku Servis Elektronik • Modul Ekspor Resmi</span>
             </div>
             <h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight mt-space-xs">
               Buku Servis Digital (Digital Maintenance Logbook)
@@ -1026,7 +1026,7 @@
               <div class="space-y-2 text-xs">
                 <div class="flex justify-between"><span class="text-on-surface-variant">Format Dokumen:</span><span class="font-semibold text-on-surface">Standar PDF A4 Universal</span></div>
                 <div class="flex justify-between"><span class="text-on-surface-variant">Zona Waktu:</span><span class="font-semibold text-on-surface">Asia/Jakarta (WIB)</span></div>
-                <div class="flex justify-between"><span class="text-on-surface-variant">Kepatuhan Hukum:</span><span class="font-semibold text-primary">FR-053 Keterangan Mandiri</span></div>
+                <div class="flex justify-between"><span class="text-on-surface-variant">Keterangan Dokumen:</span><span class="font-semibold text-primary">Pencatatan Mandiri</span></div>
               </div>
               <div class="bg-surface-container-low p-space-sm rounded-lg text-body-sm text-on-surface-variant">
                 <p class="text-[12px] leading-relaxed">
@@ -1120,9 +1120,9 @@
                   </table>
                 </div>
 
-                <!-- Empty state notice (FR-052) -->
+                <!-- Empty state notice -->
                 <div id="pdf-empty-notice" class="hidden py-8 text-center text-gray-500 text-xs bg-gray-50 border border-gray-200 rounded mt-2">
-                  Belum ada riwayat penggantian suku cadang yang tercatat pada sepeda motor ini (FR-052).
+                  Belum ada riwayat penggantian suku cadang yang tercatat pada sepeda motor ini.
                 </div>
               </div>
 
@@ -1131,7 +1131,7 @@
                 <div class="space-y-1 max-w-lg">
                   <div class="font-bold text-gray-700 flex items-center gap-1">
                     <span class="material-symbols-outlined text-xs text-primary">policy</span>
-                    Klausul &amp; Batasan Tanggung Jawab Hukum (Sesuai Ketentuan FR-053):
+                    Klausul &amp; Batasan Tanggung Jawab Hukum:
                   </div>
                   <p class="leading-relaxed">
                     Data riwayat servis di atas dicatat secara mandiri oleh pemilik kendaraan melalui aplikasi MotoCare Digital dan tidak diverifikasi langsung oleh pihak bengkel resmi pabrikan. Dokumen ini sah sebagai rekam jejak pribadi dan referensi transaksi jual beli.
@@ -1167,7 +1167,7 @@
             </div>
             <h1 class="font-headline-md text-headline-md text-on-surface font-bold">Pendaftaran Sepeda Motor</h1>
             <p class="font-body-md text-body-md text-on-surface-variant">
-              Pilih tipe motor dari katalog master untuk menduplikasi standar interval penggantian pabrikan (BR-009).
+              Pilih tipe motor dari katalog master untuk memuat standar interval penggantian pabrikan secara otomatis.
             </p>
           </div>
 
@@ -1199,13 +1199,13 @@
             <div>
               <label for="reg-odo-input" class="block font-label-md text-label-md font-semibold text-on-surface mb-1">Angka Odometer Saat Ini (km)</label>
               <input type="number" id="reg-odo-input" min="0" max="999999" placeholder="Contoh: 12000" class="w-full bg-surface-container-low text-on-surface p-3 rounded-lg border border-[#e4beba]/60 focus:outline-none focus:ring-2 focus:ring-primary font-mono font-bold" required/>
-              <p class="text-xs text-on-surface-variant mt-1">Rentang 0 - 999.999 km sesuai aturan BR-014.</p>
+              <p class="text-xs text-on-surface-variant mt-1">Rentang 0 - 999.999 km.</p>
             </div>
 
-            <!-- Optional Initial Custom Baselines Accordion (FR-013) -->
+            <!-- Optional Initial Custom Baselines Accordion -->
             <details class="bg-surface-container-low p-space-md rounded-lg border border-[#e4beba]/40">
               <summary class="font-label-md text-label-md font-semibold text-on-surface cursor-pointer flex items-center justify-between">
-                <span>Pengaturan Penggantian Awal (Opsional - FR-013)</span>
+                <span>Pengaturan Penggantian Awal (Opsional)</span>
                 <span class="material-symbols-outlined text-sm">expand_more</span>
               </summary>
               <div class="pt-space-md" id="reg-custom-baselines-container">
@@ -1234,7 +1234,7 @@
             <span class="bg-primary-fixed text-primary px-2 py-0.5 rounded text-xs font-bold uppercase">Hak Akses Administrator</span>
             <h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight mt-1">Pengelolaan Data Master</h1>
             <p class="font-body-md text-xs text-on-surface-variant mt-0.5">
-              Kelola katalog tipe motor dan standar suku cadang pabrikan (FR-060 - FR-063). Perubahan master tidak menimpa status snapshot motor terdaftar pengguna (BR-009).
+              Kelola katalog tipe motor dan standar suku cadang pabrikan. Perubahan master tidak menimpa status motor terdaftar pengguna.
             </p>
           </div>
           <div class="flex items-center gap-2">
@@ -1251,7 +1251,7 @@
         <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-[#e4beba]/40 p-space-md space-y-space-sm">
           <h2 class="font-title-lg text-title-lg font-bold text-on-surface flex items-center gap-2">
             <span class="material-symbols-outlined text-primary">two_wheeler</span>
-            <span>Katalog Master Sepeda Motor (FR-060)</span>
+            <span>Katalog Master Sepeda Motor</span>
           </h2>
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
@@ -1277,7 +1277,7 @@
         <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-[#e4beba]/40 p-space-md space-y-space-sm">
           <h2 class="font-title-lg text-title-lg font-bold text-on-surface flex items-center gap-2">
             <span class="material-symbols-outlined text-primary">build</span>
-            <span>Standar Komponen &amp; Suku Cadang (FR-061)</span>
+            <span>Standar Komponen &amp; Suku Cadang</span>
           </h2>
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
@@ -1372,7 +1372,7 @@
         <div class="bg-surface-container-high/60 p-space-sm rounded text-body-sm text-on-surface-variant flex items-start gap-space-xs">
           <span class="material-symbols-outlined text-primary text-base shrink-0 mt-0.5">info</span>
           <p class="text-[12px] leading-tight">
-            Setelah dikonfirmasi, baseline odometer dan tanggal komponen ini akan disetel ulang per hari ini (BR-008). Catatan akan otomatis tersimpan dalam Buku Servis Digital (FR-032).
+            Setelah dikonfirmasi, titik awal odometer dan tanggal komponen ini akan disetel ulang per hari ini. Catatan akan otomatis tersimpan dalam Buku Servis Digital.
           </p>
         </div>
       </div>
@@ -1432,7 +1432,7 @@
             <span id="modal-odo-delta-display" class="font-mono font-bold text-secondary">+150 km</span>
           </div>
           <p class="text-[11px] text-on-surface-variant pt-1 border-t border-surface-container-high/60">
-            *Ketentuan BR-014: Odometer bilangan bulat 0-999.999 km; penambahan lebih dari 5.000 km memicu konfirmasi keamanan lonjakan.
+            *Catatan: Odometer bilangan bulat 0 - 999.999 km; penambahan lebih dari 5.000 km memicu konfirmasi keamanan lonjakan.
           </p>
         </div>
       </div>
@@ -1542,7 +1542,7 @@
           <input type="text" id="admin-part-kode" placeholder="Contoh: 31916-K97-T01" class="w-full bg-surface-container-low p-2 rounded border border-[#e4beba]/60 font-mono text-xs uppercase"/>
         </div>
         <p class="text-[11px] text-on-surface-variant">
-          *Aturan AC-061.1: Minimal salah satu interval (km atau bulan) wajib bernilai lebih dari 0.
+          *Catatan: Minimal salah satu interval (km atau bulan) wajib bernilai lebih dari 0.
         </p>
       </div>
       <div class="bg-surface-container-low px-space-lg py-space-md flex items-center justify-end gap-space-sm border-t border-surface-container-high">
@@ -1582,7 +1582,7 @@
       <!-- Tab 1: Demo Switcher -->
       <div id="auth-panel-demo" class="p-space-lg space-y-space-sm">
         <p class="text-xs text-on-surface-variant mb-2">
-          Beralih peran instan antara Pengguna dan Administrator (1-Click) untuk menguji seluruh modul PRD:
+          Beralih peran atau akun instan antara Pengguna dan Administrator:
         </p>
 
         <!-- Option 1: Dimas P. (Pengguna Utama) -->
@@ -1652,7 +1652,7 @@
           </div>
           <div>
             <label class="block text-xs font-semibold text-on-surface mb-1">Password (Minimal 8 Karakter)</label>
-            <input type="password" id="reg-user-password" minlength="8" placeholder="Minimal 8 karakter (BR-015)" class="w-full bg-surface-container-low p-2.5 rounded-lg border border-[#e4beba]/60 text-xs text-on-surface focus:outline-none focus:ring-2 focus:ring-primary" required/>
+            <input type="password" id="reg-user-password" minlength="8" placeholder="Minimal 8 karakter" class="w-full bg-surface-container-low p-2.5 rounded-lg border border-[#e4beba]/60 text-xs text-on-surface focus:outline-none focus:ring-2 focus:ring-primary" required/>
           </div>
           <button type="submit" class="w-full bg-primary hover:bg-primary-container text-on-primary py-2.5 rounded-lg font-label-md text-xs font-semibold shadow-sm transition-all">
             Daftar Akun Pengguna

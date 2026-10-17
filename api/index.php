@@ -57,7 +57,7 @@ function getCurrentUser($pdo) {
 
 function requireAdmin($user) {
     if (!$user || $user['role'] !== 'admin') {
-        jsonError("Akses ditolak. Anda memerlukan hak akses Administrator (FR-004, 403 Forbidden).", 403);
+        jsonError("Akses ditolak. Anda memerlukan hak akses Administrator.", 403);
     }
 }
 
@@ -199,7 +199,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
 
         // BR-015: Password min 8 chars
         if (strlen($password) < 8) {
-            jsonError("Password minimal harus 8 karakter sesuai aturan BR-015");
+            jsonError("Password minimal harus 8 karakter");
         }
 
         // Check unique email
@@ -342,7 +342,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
         $motor = $stmt->fetch();
 
         if (!$motor) {
-            jsonError("Motor tidak ditemukan atau bukan milik Anda (BR-018)", 404);
+            jsonError("Motor tidak ditemukan atau bukan milik Anda", 404);
         }
 
         $currentOdo = (int)$motor['odometer_saat_ini'];
@@ -428,7 +428,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
         if ($checkDup->fetch()) {
             jsonResponse([
                 'success' => true,
-                'message' => "Permintaan sudah diproses sebelumnya (Pencegahan duplikasi BR-011).",
+                'message' => "Permintaan sudah diproses sebelumnya.",
             ]);
         }
 
@@ -573,7 +573,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
         // BR-016: Check within 24 hours
         $createdTs = strtotime($service['created_at']);
         if ((time() - $createdTs) > 86400) {
-            jsonError("Pembatalan ditolak. Batas waktu pembatalan penggantian adalah maksimal 24 jam (BR-016).");
+            jsonError("Pembatalan ditolak. Batas waktu pembatalan penggantian adalah maksimal 24 jam.");
         }
 
         $pdo->beginTransaction();
@@ -596,7 +596,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
             $pdo->commit();
             jsonResponse([
                 'success' => true,
-                'message' => "Penggantian terakhir berhasil dibatalkan. Baseline dikembalikan ke data sebelumnya sesuai BR-016.",
+                'message' => "Penggantian terakhir berhasil dibatalkan. Titik awal baseline dikembalikan ke data sebelumnya.",
             ]);
         } catch (Exception $e) {
             $pdo->rollBack();
@@ -673,7 +673,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
         $checkExisting = $pdo->prepare("SELECT id FROM user_motor WHERE user_id = ?");
         $checkExisting->execute([$user['id']]);
         if ($checkExisting->fetch()) {
-            jsonError("Akun Anda sudah memiliki sepeda motor aktif terdaftar. Fitur garasi multimotor dijadwalkan pada Fase 2 (FR-014).");
+            jsonError("Akun Anda sudah memiliki sepeda motor aktif terdaftar.");
         }
 
         // BR-005 & BR-014: Validation
@@ -1001,7 +1001,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
 
         jsonResponse([
             'success' => true,
-            'message' => $status ? "Tipe motor diaktifkan kembali" : "Tipe motor dinonaktifkan (penonaktifan aman per FR-062)",
+            'message' => $status ? "Tipe motor diaktifkan kembali" : "Tipe motor dinonaktifkan",
         ]);
         break;
 
@@ -1018,7 +1018,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
 
         // AC-061.1: Minimal satu interval > 0
         if (($km === null || $km <= 0) && ($bulan === null || $bulan <= 0)) {
-            jsonError("Minimal satu interval (km atau bulan) wajib bernilai lebih dari 0 (AC-061.1)");
+            jsonError("Minimal satu interval (km atau bulan) wajib bernilai lebih dari 0");
         }
 
         if (empty($nama) || $motorId <= 0) {
@@ -1032,7 +1032,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
                 WHERE id = ?
             ");
             $stmt->execute([$motorId, $nama, $km, $bulan, $kodePart, $id]);
-            $msg = "Master komponen berhasil diperbarui (Snapshot pengguna lama terjaga utuh per BR-009 / FR-063)";
+            $msg = "Master komponen berhasil diperbarui";
         } else {
             $stmt = $pdo->prepare("
                 INSERT INTO master_part (master_motor_id, nama_komponen, interval_km, interval_bulan, kode_part_rekomendasi, aktif)
@@ -1057,7 +1057,7 @@ if (!defined('MOTOCARE_TEST_MODE')) {
 
         jsonResponse([
             'success' => true,
-            'message' => $status ? "Komponen diaktifkan" : "Komponen dinonaktifkan per FR-062",
+            'message' => $status ? "Komponen diaktifkan" : "Komponen dinonaktifkan",
         ]);
         break;
 

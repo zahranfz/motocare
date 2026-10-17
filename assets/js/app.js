@@ -895,7 +895,7 @@ const App = {
       tbody.innerHTML = `
         <tr>
           <td colspan="7" class="p-space-xl text-center text-on-surface-variant font-body-md">
-            Belum ada riwayat penggantian servis yang tercatat (FR-034).
+            Belum ada riwayat penggantian servis yang tercatat.
           </td>
         </tr>
       `;
@@ -908,9 +908,9 @@ const App = {
         ? `<span class="bg-surface-container-high text-on-surface-variant px-space-xs py-0.5 rounded font-mono text-label-sm font-semibold">Dibatalkan</span>`
         : `<span class="bg-secondary-container/40 text-on-secondary-container px-space-xs py-0.5 rounded font-label-sm text-label-sm font-semibold flex items-center gap-1 w-fit"><span class="material-symbols-outlined text-xs">verified</span> Aktif</span>`;
 
-      // Cancel button per BR-016
+      // Cancel button
       const cancelBtn = r.can_cancel ? `
-        <button onclick="App.cancelService(${r.id})" class="text-error hover:bg-error-container/30 px-2 py-1 rounded text-label-sm font-semibold flex items-center gap-1 transition-colors" title="Batalkan penggantian ini dalam 24 jam (BR-016)">
+        <button onclick="App.cancelService(${r.id})" class="text-error hover:bg-error-container/30 px-2 py-1 rounded text-label-sm font-semibold flex items-center gap-1 transition-colors" title="Batalkan penggantian ini (berlaku dalam 24 jam)">
           <span class="material-symbols-outlined text-sm">undo</span>
           <span>Batalkan</span>
         </button>
@@ -934,7 +934,7 @@ const App = {
   },
 
   async cancelService(serviceId) {
-    const confirmed = confirm('Batalkan penggantian ini? Titik awal (baseline) odometer dan tanggal komponen akan dikembalikan ke data sebelumnya (Sesuai aturan BR-016).');
+    const confirmed = confirm('Batalkan penggantian ini? Titik awal (baseline) odometer dan tanggal komponen akan dikembalikan ke data sebelumnya.');
     if (!confirmed) return;
 
     const res = await this.api('cancel_service', 'POST', { service_id: serviceId });
@@ -1132,7 +1132,7 @@ const App = {
     }
 
     container.innerHTML = `
-      <div class="text-xs font-semibold text-on-surface mb-2">Titik Awal Penggantian Terakhir Komponen (Opsional per FR-013):</div>
+      <div class="text-xs font-semibold text-on-surface mb-2">Titik Awal Penggantian Terakhir Komponen (Opsional):</div>
       <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
         ${parts.map(p => `
           <div class="bg-surface-container-low p-2 rounded text-xs grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
